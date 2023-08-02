@@ -1,4 +1,6 @@
-package com.williambl;
+package com.williambl.vampilang.lang.function;
+
+import com.williambl.vampilang.lang.type.VType;
 
 import java.util.HashMap;
 import java.util.List;

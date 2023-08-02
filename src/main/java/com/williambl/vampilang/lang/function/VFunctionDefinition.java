@@ -1,4 +1,6 @@
-package com.williambl;
+package com.williambl.vampilang.lang.function;
+
+import com.williambl.vampilang.lang.VValue;
 
 import java.util.List;
 import java.util.function.BiFunction;

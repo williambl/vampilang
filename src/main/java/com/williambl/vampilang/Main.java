@@ -1,4 +1,10 @@
-package com.williambl;
+package com.williambl.vampilang;
+
+import com.williambl.vampilang.lang.*;
+import com.williambl.vampilang.lang.function.VFunctionDefinition;
+import com.williambl.vampilang.lang.function.VFunctionSignature;
+import com.williambl.vampilang.lang.type.VTemplateType;
+import com.williambl.vampilang.lang.type.VType;
 
 import java.util.HashMap;
 import java.util.List;

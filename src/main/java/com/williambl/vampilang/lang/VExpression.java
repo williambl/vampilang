@@ -1,5 +1,8 @@
-package com.williambl;
+package com.williambl.vampilang.lang;
 
+import com.williambl.vampilang.lang.function.VFunctionDefinition;
+import com.williambl.vampilang.lang.function.VFunctionSignature;
+import com.williambl.vampilang.lang.type.VType;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Arrays;

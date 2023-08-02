@@ -1,8 +1,7 @@
-package com.williambl;
+package com.williambl.vampilang.lang.type;
 
 import org.jetbrains.annotations.Nullable;
 
-import java.util.List;
 import java.util.Set;
 
 public final class VTemplateType extends VType {

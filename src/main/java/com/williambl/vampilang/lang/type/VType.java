@@ -1,4 +1,4 @@
-package com.williambl;
+package com.williambl.vampilang.lang.type;
 
 public sealed class VType permits VTemplateType {
     public final boolean isTemplate() {
