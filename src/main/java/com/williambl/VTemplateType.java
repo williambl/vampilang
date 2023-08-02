@@ -1,12 +1,14 @@
 package com.williambl;
 
+import org.jetbrains.annotations.Nullable;
+
 import java.util.List;
 import java.util.Set;
 
 public final class VTemplateType extends VType {
-    private final Set<VType> bounds;
+    private final @Nullable Set<VType> bounds;
 
-    public VTemplateType(Set<VType> bounds) {
+    public VTemplateType(@Nullable Set<VType> bounds) {
         this.bounds = bounds;
     }
 
@@ -17,6 +19,6 @@ public final class VTemplateType extends VType {
 
     @Override
     public boolean contains(VType other) {
-        return this == other || this.bounds.contains(other) || other instanceof VTemplateType template && this.bounds.containsAll(template.bounds);
+        return this == other || this.bounds == null || this.bounds.contains(other) || (other instanceof VTemplateType template && template.bounds != null && this.bounds.containsAll(template.bounds));
     }
 }

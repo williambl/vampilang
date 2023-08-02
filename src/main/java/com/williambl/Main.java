@@ -14,15 +14,22 @@ public class Main {
         typeNames.put(doubleType, "double");
         var numType = new VTemplateType(Set.of(intType, doubleType));
         typeNames.put(numType, "number");
+        var boolType = new VType();
+        typeNames.put(boolType, "bool");
+        var anyType = new VTemplateType(null);
+        typeNames.put(anyType, "any");
 
         var addFunction = new VFunctionDefinition("add", new VFunctionSignature(List.of(numType, numType), numType), (sig, a) -> new VValue<>(sig.outputType(), (Double) a.get(0).value() + (Double) a.get(1).value()));
-        List<VValue<?>> functionInputs = List.of(
-                new VValue<>(doubleType, 2.0),
-                new VValue<>(doubleType, 2.0)
+        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(List.of(boolType, anyType, anyType), anyType), (sig, a) -> new VValue<>(sig.outputType(), (boolean) a.get(0).value() ? a.get(1).value() : a.get(2).value()));
+        var program = VExpression.functionApplication(ifElseFunction,
+                VExpression.value(boolType, true),
+                VExpression.functionApplication(addFunction,
+                        VExpression.value(intType, 5),
+                        VExpression.value(intType, 10)),
+                VExpression.value(intType, 15)
         );
-        System.out.println(addFunction.signature().toString(typeNames));
-        var resolvedSignature = addFunction.signature().resolveTypes(functionInputs.stream().map(VValue::type).toList());
-        System.out.println(resolvedSignature.toString(typeNames));
-        System.out.println(addFunction.function().apply(resolvedSignature, functionInputs).value());
+        System.out.println(program.toString(typeNames));
+        var resolvedProgram = program.resolveTypes();
+        System.out.println(resolvedProgram.toString(typeNames));
     }
 }
