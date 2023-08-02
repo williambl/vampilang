@@ -6,22 +6,23 @@ import com.williambl.vampilang.lang.type.VType;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 public sealed interface VExpression {
-    public static VExpression functionApplication(VFunctionDefinition function, VExpression... inputs) {
-        return new FunctionApplication(function, null, Arrays.asList(inputs));
+    public static VExpression functionApplication(VFunctionDefinition function, Map<String, VExpression> inputs) {
+        return new FunctionApplication(function, null, inputs);
     }
 
     public static VExpression value(VType type, Object value) {
         return new Value(new VValue(type, value));
     }
 
-    public record FunctionApplication(VFunctionDefinition function, @Nullable VFunctionSignature resolvedSignature, List<VExpression> inputs) implements VExpression {
+    public record FunctionApplication(VFunctionDefinition function, @Nullable VFunctionSignature resolvedSignature, Map<String, VExpression> inputs) implements VExpression {
 
         @Override
         public VExpression resolveTypes() {
-            var resolvedInputs = this.inputs.stream().map(VExpression::resolveTypes).toList();
-            var resolvedFunctionSignature = this.function.signature().uniquise().resolveTypes(resolvedInputs.stream().map(VExpression::type).toList());
+            var resolvedInputs = this.inputs.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, kv -> kv.getValue().resolveTypes()));
+            var resolvedFunctionSignature = this.function.signature().uniquise().resolveTypes(resolvedInputs.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, kv -> kv.getValue().type())));
             return new FunctionApplication(this.function, resolvedFunctionSignature, resolvedInputs);
         }
 
@@ -36,8 +37,12 @@ public sealed interface VExpression {
             builder.append("(function ");
             builder.append(this.function.name());
             builder.append(" ");
-            for (var input : this.inputs) {
-                builder.append(input.toString(ctx));
+            var inputs = new ArrayList<>(this.inputs.entrySet());
+            inputs.sort(Map.Entry.comparingByKey());
+            for (var input : inputs) {
+                builder.append(input.getKey());
+                builder.append(" = ");
+                builder.append(input.getValue().toString(ctx));
                 builder.append(" ");
             }
             builder.append(": ");
@@ -52,7 +57,7 @@ public sealed interface VExpression {
                 return this.resolveTypes().evaluate(ctx);
             }
 
-            return this.function.function().apply(ctx, this.resolvedSignature, this.inputs.stream().map(expr -> expr.evaluate(ctx)).toList());
+            return this.function.function().apply(ctx, this.resolvedSignature, this.inputs.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, kv -> kv.getValue().evaluate(ctx))));
         }
 
         @Override

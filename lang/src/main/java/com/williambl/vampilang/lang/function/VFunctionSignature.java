@@ -3,26 +3,26 @@ package com.williambl.vampilang.lang.function;
 import com.williambl.vampilang.lang.EvaluationContext;
 import com.williambl.vampilang.lang.type.VType;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
+import java.util.stream.Collectors;
 
-public record VFunctionSignature(List<VType> inputTypes, VType outputType) {
+public record VFunctionSignature(Map<String, VType> inputTypes, VType outputType) {
     public VFunctionSignature uniquise() {
         var uniquisedTemplates = new HashMap<VType, VType>();
-        for (var type : this.inputTypes) {
+        for (var type : this.inputTypes.values()) {
             uniquisedTemplates.computeIfAbsent(type, $ -> type.uniquise());
         }
         uniquisedTemplates.computeIfAbsent(this.outputType, $ -> this.outputType.uniquise());
-        return new VFunctionSignature(this.inputTypes.stream().map(uniquisedTemplates::get).toList(), uniquisedTemplates.get(this.outputType));
+        return new VFunctionSignature(
+                this.inputTypes.entrySet().stream()
+                        .collect(Collectors.toMap(Map.Entry::getKey, kv -> uniquisedTemplates.get(kv.getValue()))), uniquisedTemplates.get(this.outputType));
     }
 
-    public VFunctionSignature resolveTypes(List<VType> actualInputs) {
+    public VFunctionSignature resolveTypes(Map<String, VType> actualInputs) {
         var resolvedTemplates = new HashMap<VType, VType>();
-        for (int i = 0; i < this.inputTypes.size(); i++) {
-            var inputType = this.inputTypes.get(i);
-            var actualInputType = actualInputs.get(i);
+        for (var key : this.inputTypes.keySet()) {
+            var inputType = this.inputTypes.get(key);
+            var actualInputType = actualInputs.get(key);
             if (inputType.isTemplate() && inputType.contains(actualInputType)) {
                 var currentResolution = resolvedTemplates.get(inputType);
                 if (currentResolution != null && !actualInputType.contains(currentResolution)) {
@@ -34,16 +34,21 @@ public record VFunctionSignature(List<VType> inputTypes, VType outputType) {
         }
 
         return new VFunctionSignature(
-                this.inputTypes.stream().map(t -> resolvedTemplates.getOrDefault(t, t)).toList(),
+                this.inputTypes.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, kv -> resolvedTemplates.getOrDefault(kv.getValue(), kv.getValue()))),
                 resolvedTemplates.getOrDefault(this.outputType, this.outputType)
         );
     }
 
     public String toString(EvaluationContext ctx) {
         var builder = new StringBuilder();
-        for (int i = 0; i < this.inputTypes.size(); i++) {
-            builder.append(this.inputTypes.get(i).toString(ctx));
-            if (i+1 < this.inputTypes.size()) {
+        var entries = new ArrayList<>(this.inputTypes.entrySet());
+        entries.sort(Map.Entry.comparingByKey());
+        for (var iter = entries.iterator(); iter.hasNext();) {
+            var input = iter.next();
+            builder.append(input.getKey());
+            builder.append(" : ");
+            builder.append(input.getValue().toString(ctx));
+            if (iter.hasNext()) {
                 builder.append(", ");
             }
         }

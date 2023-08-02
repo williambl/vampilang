@@ -11,6 +11,7 @@ import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 
 public class EvaluationTest {
@@ -22,15 +23,14 @@ public class EvaluationTest {
         var numType = new VTemplateType(Set.of(intType, doubleType));
         var boolType = new VType();
         var anyType = new VTemplateType(null);
-        var addFunction = new VFunctionDefinition("add", new VFunctionSignature(List.of(numType, numType), numType), (ctx, sig, a) -> new VValue(sig.outputType(), ((Number) a.get(0).value()).doubleValue() + ((Number) a.get(1).value()).doubleValue()));
-        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(List.of(boolType, anyType, anyType), anyType), (ctx, sig, a) -> new VValue(sig.outputType(), (boolean) a.get(0).value() ? a.get(1).value() : a.get(2).value()));
-        var program = VExpression.functionApplication(ifElseFunction,
-                VExpression.value(boolType, true),
-                VExpression.functionApplication(addFunction,
-                        VExpression.value(intType, 5),
-                        VExpression.value(intType, 10)),
-                VExpression.value(intType, 25)
-        );
+        var addFunction = new VFunctionDefinition("add", new VFunctionSignature(Map.of("a", numType, "b", numType), numType), (ctx, sig, a) -> new VValue(sig.outputType(), ((Number) a.get("a").value()).doubleValue() + ((Number) a.get("b").value()).doubleValue()));
+        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> new VValue(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value()));
+        var program = VExpression.functionApplication(ifElseFunction, Map.of(
+                "predicate", VExpression.value(boolType, true),
+                "a", VExpression.functionApplication(addFunction, Map.of(
+                        "a", VExpression.value(intType, 5),
+                        "b", VExpression.value(intType, 10))),
+                "b", VExpression.value(intType, 25)));
         var resolved = Assertions.assertDoesNotThrow(program::resolveTypes);
         var result = Assertions.assertDoesNotThrow(() -> resolved.evaluate(evaluationCtx));
         Assertions.assertEquals(intType, result.type());
@@ -45,18 +45,17 @@ public class EvaluationTest {
         var numType = new VTemplateType(Set.of(intType, doubleType));
         var boolType = new VType();
         var anyType = new VTemplateType(null);
-        var addFunction = new VFunctionDefinition("add", new VFunctionSignature(List.of(numType, numType), numType), (ctx, sig, a) -> new VValue(sig.outputType(), ((Number) a.get(0).value()).doubleValue() + ((Number) a.get(1).value()).doubleValue()));
-        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(List.of(boolType, anyType, anyType), anyType), (ctx, sig, a) -> new VValue(sig.outputType(), (boolean) a.get(0).value() ? a.get(1).value() : a.get(2).value()));
-        var program = VExpression.functionApplication(ifElseFunction,
-                VExpression.functionApplication(ifElseFunction,
-                        VExpression.value(boolType, true),
-                        VExpression.value(boolType, true),
-                        VExpression.value(boolType, false)),
-                VExpression.functionApplication(addFunction,
-                        VExpression.value(intType, 5),
-                        VExpression.value(intType, 10)),
-                VExpression.value(intType, 25)
-        );
+        var addFunction = new VFunctionDefinition("add", new VFunctionSignature(Map.of("a", numType, "b", numType), numType), (ctx, sig, a) -> new VValue(sig.outputType(), ((Number) a.get("a").value()).doubleValue() + ((Number) a.get("b").value()).doubleValue()));
+        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> new VValue(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value()));
+        var program = VExpression.functionApplication(ifElseFunction, Map.of(
+                "predicate", VExpression.functionApplication(ifElseFunction, Map.of(
+                        "predicate", VExpression.value(boolType, true),
+                        "a", VExpression.value(boolType, true),
+                        "b", VExpression.value(boolType, false))),
+                "a", VExpression.functionApplication(addFunction, Map.of(
+                        "a", VExpression.value(intType, 5),
+                        "b", VExpression.value(intType, 10))),
+                "b", VExpression.value(intType, 25)));
         var resolved = Assertions.assertDoesNotThrow(program::resolveTypes);
         var result = Assertions.assertDoesNotThrow(() -> resolved.evaluate(evaluationCtx));
         Assertions.assertEquals(intType, result.type());
@@ -77,20 +76,19 @@ public class EvaluationTest {
         var anyType = new VTemplateType(null);
         evaluationCtx.addName(anyType, "any");
 
-        var addFunction = new VFunctionDefinition("add", new VFunctionSignature(List.of(numType, numType), numType), (ctx, sig, a) -> new VValue(sig.outputType(), ((Number) a.get(0).value()).doubleValue() + ((Number) a.get(1).value()).doubleValue()));
-        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(List.of(boolType, anyType, anyType), anyType), (ctx, sig, a) -> new VValue(sig.outputType(), (boolean) a.get(0).value() ? a.get(1).value() : a.get(2).value()));
-        var program = VExpression.functionApplication(ifElseFunction,
-                VExpression.functionApplication(ifElseFunction,
-                        VExpression.value(boolType, true),
-                        VExpression.value(boolType, true),
-                        VExpression.value(boolType, false)),
-                VExpression.functionApplication(addFunction,
-                        VExpression.value(intType, 5),
-                        VExpression.value(intType, 10)),
-                VExpression.value(intType, 25)
-        );
+        var addFunction = new VFunctionDefinition("add", new VFunctionSignature(Map.of("a", numType, "b", numType), numType), (ctx, sig, a) -> new VValue(sig.outputType(), ((Number) a.get("a").value()).doubleValue() + ((Number) a.get("b").value()).doubleValue()));
+        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> new VValue(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value()));
+        var program = VExpression.functionApplication(ifElseFunction, Map.of(
+                "predicate", VExpression.functionApplication(ifElseFunction, Map.of(
+                        "predicate", VExpression.value(boolType, true),
+                        "a", VExpression.value(boolType, true),
+                        "b", VExpression.value(boolType, false))),
+                "a", VExpression.functionApplication(addFunction, Map.of(
+                        "a", VExpression.value(intType, 5),
+                        "b", VExpression.value(intType, 10))),
+                "b", VExpression.value(intType, 25)));
         var resolved = Assertions.assertDoesNotThrow(program::resolveTypes);
-        Assertions.assertEquals("(function if-else (function if-else (value true : bool) (value true : bool) (value false : bool) : bool, type1, type1 -> type1) (function add (value 5 : int) (value 10 : int) : type2[double|int], type2[double|int] -> type2[double|int]) (value 25 : int) : bool, type3, type3 -> type3)", program.toString(new EvaluationContext(evaluationCtx)));
-        Assertions.assertEquals("(function if-else (function if-else (value true : bool) (value true : bool) (value false : bool) : bool, bool, bool -> bool) (function add (value 5 : int) (value 10 : int) : int, int -> int) (value 25 : int) : bool, int, int -> int)", resolved.toString(new EvaluationContext(evaluationCtx)));
+        Assertions.assertEquals("(function if-else a = (function add a = (value 5 : int) b = (value 10 : int) : a : type1[double|int], b : type1[double|int] -> type1[double|int]) b = (value 25 : int) predicate = (function if-else a = (value true : bool) b = (value false : bool) predicate = (value true : bool) : a : type2, b : type2, predicate : bool -> type2) : a : type3, b : type3, predicate : bool -> type3)", program.toString(new EvaluationContext(evaluationCtx)));
+        Assertions.assertEquals("(function if-else a = (function add a = (value 5 : int) b = (value 10 : int) : a : int, b : int -> int) b = (value 25 : int) predicate = (function if-else a = (value true : bool) b = (value false : bool) predicate = (value true : bool) : a : bool, b : bool, predicate : bool -> bool) : a : int, b : int, predicate : bool -> int)", resolved.toString(new EvaluationContext(evaluationCtx)));
     }
 }
