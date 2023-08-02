@@ -1,5 +1,6 @@
 package com.williambl.vampilang.lang.function;
 
+import com.williambl.vampilang.lang.EvaluationContext;
 import com.williambl.vampilang.lang.type.VType;
 
 import java.util.HashMap;
@@ -16,6 +17,7 @@ public record VFunctionSignature(List<VType> inputTypes, VType outputType) {
         uniquisedTemplates.computeIfAbsent(this.outputType, $ -> this.outputType.uniquise());
         return new VFunctionSignature(this.inputTypes.stream().map(uniquisedTemplates::get).toList(), uniquisedTemplates.get(this.outputType));
     }
+
     public VFunctionSignature resolveTypes(List<VType> actualInputs) {
         var resolvedTemplates = new HashMap<VType, VType>();
         for (int i = 0; i < this.inputTypes.size(); i++) {
@@ -37,16 +39,16 @@ public record VFunctionSignature(List<VType> inputTypes, VType outputType) {
         );
     }
 
-    public String toString(Map<VType, String> typeNames) {
+    public String toString(EvaluationContext ctx) {
         var builder = new StringBuilder();
         for (int i = 0; i < this.inputTypes.size(); i++) {
-            builder.append(typeNames.computeIfAbsent(this.inputTypes.get(i), $ -> "type#"+Integer.toString(new Random().nextInt(0, 500), 16)));
+            builder.append(this.inputTypes.get(i).toString(ctx));
             if (i+1 < this.inputTypes.size()) {
                 builder.append(", ");
             }
         }
         builder.append(" -> ");
-        builder.append(typeNames.computeIfAbsent(this.outputType, $ -> "type#"+Integer.toString(new Random().nextInt(0, 500), 16)));
+        builder.append(this.outputType.toString(ctx));
         return builder.toString();
     }
 }

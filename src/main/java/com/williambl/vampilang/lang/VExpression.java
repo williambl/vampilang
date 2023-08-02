@@ -33,17 +33,17 @@ public sealed interface VExpression {
         }
 
         @Override
-        public String toString(Map<VType, String> typeNames) {
+        public String toString(EvaluationContext ctx) {
             var builder = new StringBuilder();
             builder.append("(function ");
             builder.append(this.function.name());
             builder.append(" ");
             for (var input : this.inputs) {
-                builder.append(input.toString(typeNames));
+                builder.append(input.toString(ctx));
                 builder.append(" ");
             }
             builder.append(": ");
-            builder.append((this.resolvedSignature == null ? this.function.signature().uniquise() : this.resolvedSignature).toString(typeNames));
+            builder.append((this.resolvedSignature == null ? this.function.signature().uniquise() : this.resolvedSignature).toString(ctx));
             builder.append(")");
             return builder.toString();
         }
@@ -69,8 +69,8 @@ public sealed interface VExpression {
         }
 
         @Override
-        public String toString(Map<VType, String> typeNames) {
-            return "(value %s : %s)".formatted(this.value.value(), typeNames.computeIfAbsent(this.type(), $ -> "type#"+Integer.toString(new Random().nextInt(0, 500), 16)));
+        public String toString(EvaluationContext ctx) {
+            return "(value %s : %s)".formatted(this.value.value(), this.type().toString(ctx));
         }
 
         @Override
@@ -82,5 +82,5 @@ public sealed interface VExpression {
     VType type();
     VValue evaluate();
 
-    String toString(Map<VType, String> typeNames);
+    String toString(EvaluationContext ctx);
 }
