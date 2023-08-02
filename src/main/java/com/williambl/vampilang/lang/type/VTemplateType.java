@@ -25,6 +25,6 @@ public final class VTemplateType extends VType {
 
     @Override
     public String toString(EvaluationContext ctx) {
-        return super.toString(ctx) + (this.bounds == null ? "" : "["+this.bounds.stream().map(b -> b.toString(ctx)).collect(Collectors.joining("|"))+"]");
+        return super.toString(ctx) + (this.bounds == null ? "" : "["+this.bounds.stream().map(b -> b.toString(ctx)).sorted().collect(Collectors.joining("|"))+"]");
     }
 }

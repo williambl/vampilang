@@ -24,9 +24,10 @@ public sealed interface VExpression {
         @Override
         public VExpression resolveTypes() {
             var resolvedInputs = this.inputs.stream().map(VExpression::resolveTypes).toList();
-            var resolvedFunctionSignature = this.function.signature().resolveTypes(resolvedInputs.stream().map(VExpression::type).toList());
+            var resolvedFunctionSignature = this.function.signature().uniquise().resolveTypes(resolvedInputs.stream().map(VExpression::type).toList());
             return new FunctionApplication(this.function, resolvedFunctionSignature, resolvedInputs);
         }
+
         @Override
         public VType type() {
             return this.resolvedSignature == null ? this.function.signature().outputType() : this.resolvedSignature.outputType();
