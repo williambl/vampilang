@@ -1,4 +1,4 @@
 package com.williambl;
 
-public record VValue<E>(VType type, E value) {
+public record VValue(VType type, Object value) {
 }

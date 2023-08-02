@@ -13,17 +13,17 @@ public sealed interface VExpression {
     }
 
     public static VExpression value(VType type, Object value) {
-        return new Value(new VValue<>(type, value));
+        return new Value(new VValue(type, value));
     }
 
     public record FunctionApplication(VFunctionDefinition function, @Nullable VFunctionSignature resolvedSignature, List<VExpression> inputs) implements VExpression {
+
         @Override
         public VExpression resolveTypes() {
             var resolvedInputs = this.inputs.stream().map(VExpression::resolveTypes).toList();
             var resolvedFunctionSignature = this.function.signature().resolveTypes(resolvedInputs.stream().map(VExpression::type).toList());
             return new FunctionApplication(this.function, resolvedFunctionSignature, resolvedInputs);
         }
-
         @Override
         public VType type() {
             return this.resolvedSignature == null ? this.function.signature().outputType() : this.resolvedSignature.outputType();
@@ -44,14 +44,22 @@ public sealed interface VExpression {
             builder.append(")");
             return builder.toString();
         }
-    }
 
-    public record Value(VValue<?> value) implements VExpression {
+        @Override
+        public VValue evaluate() {
+            if (this.resolvedSignature == null) {
+                return this.resolveTypes().evaluate();
+            }
+
+            return this.function.function().apply(this.resolvedSignature, this.inputs.stream().map(VExpression::evaluate).toList());
+        }
+    }
+    public record Value(VValue value) implements VExpression {
+
         @Override
         public VExpression resolveTypes() {
             return this;
         }
-
         @Override
         public VType type() {
             return this.value.type();
@@ -61,9 +69,15 @@ public sealed interface VExpression {
         public String toString(Map<VType, String> typeNames) {
             return "(value %s : %s)".formatted(this.value.value(), typeNames.computeIfAbsent(this.type(), $ -> "type#"+Integer.toString(new Random().nextInt(0, 500), 16)));
         }
+
+        @Override
+        public VValue evaluate() {
+            return this.value();
+        }
     }
     VExpression resolveTypes();
     VType type();
+    VValue evaluate();
 
     String toString(Map<VType, String> typeNames);
 }

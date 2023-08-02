@@ -19,17 +19,18 @@ public class Main {
         var anyType = new VTemplateType(null);
         typeNames.put(anyType, "any");
 
-        var addFunction = new VFunctionDefinition("add", new VFunctionSignature(List.of(numType, numType), numType), (sig, a) -> new VValue<>(sig.outputType(), (Double) a.get(0).value() + (Double) a.get(1).value()));
-        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(List.of(boolType, anyType, anyType), anyType), (sig, a) -> new VValue<>(sig.outputType(), (boolean) a.get(0).value() ? a.get(1).value() : a.get(2).value()));
+        var addFunction = new VFunctionDefinition("add", new VFunctionSignature(List.of(numType, numType), numType), (sig, a) -> new VValue(sig.outputType(), ((Number) a.get(0).value()).doubleValue() + ((Number) a.get(1).value()).doubleValue()));
+        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(List.of(boolType, anyType, anyType), anyType), (sig, a) -> new VValue(sig.outputType(), (boolean) a.get(0).value() ? a.get(1).value() : a.get(2).value()));
         var program = VExpression.functionApplication(ifElseFunction,
                 VExpression.value(boolType, true),
                 VExpression.functionApplication(addFunction,
                         VExpression.value(intType, 5),
                         VExpression.value(intType, 10)),
-                VExpression.value(intType, 15)
+                VExpression.value(intType, 25)
         );
         System.out.println(program.toString(typeNames));
         var resolvedProgram = program.resolveTypes();
         System.out.println(resolvedProgram.toString(typeNames));
+        System.out.println(resolvedProgram.evaluate());
     }
 }
