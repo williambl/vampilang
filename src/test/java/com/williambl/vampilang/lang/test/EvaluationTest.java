@@ -10,21 +10,20 @@ import com.williambl.vampilang.lang.type.VType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 public class EvaluationTest {
     @Test
     public void correctlyEvaluatesSimpleProgram() {
+        var evaluationCtx = new EvaluationContext();
         var intType = new VType();
         var doubleType = new VType();
         var numType = new VTemplateType(Set.of(intType, doubleType));
         var boolType = new VType();
         var anyType = new VTemplateType(null);
-        var addFunction = new VFunctionDefinition("add", new VFunctionSignature(List.of(numType, numType), numType), (sig, a) -> new VValue(sig.outputType(), ((Number) a.get(0).value()).doubleValue() + ((Number) a.get(1).value()).doubleValue()));
-        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(List.of(boolType, anyType, anyType), anyType), (sig, a) -> new VValue(sig.outputType(), (boolean) a.get(0).value() ? a.get(1).value() : a.get(2).value()));
+        var addFunction = new VFunctionDefinition("add", new VFunctionSignature(List.of(numType, numType), numType), (ctx, sig, a) -> new VValue(sig.outputType(), ((Number) a.get(0).value()).doubleValue() + ((Number) a.get(1).value()).doubleValue()));
+        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(List.of(boolType, anyType, anyType), anyType), (ctx, sig, a) -> new VValue(sig.outputType(), (boolean) a.get(0).value() ? a.get(1).value() : a.get(2).value()));
         var program = VExpression.functionApplication(ifElseFunction,
                 VExpression.value(boolType, true),
                 VExpression.functionApplication(addFunction,
@@ -33,20 +32,21 @@ public class EvaluationTest {
                 VExpression.value(intType, 25)
         );
         var resolved = Assertions.assertDoesNotThrow(program::resolveTypes);
-        var result = Assertions.assertDoesNotThrow(resolved::evaluate);
+        var result = Assertions.assertDoesNotThrow(() -> resolved.evaluate(evaluationCtx));
         Assertions.assertEquals(intType, result.type());
         Assertions.assertEquals(15, ((Number) result.value()).intValue());
     }
 
     @Test
     public void correctlyEvaluatesProgramWithReuseOfFunction() {
+        var evaluationCtx = new EvaluationContext();
         var intType = new VType();
         var doubleType = new VType();
         var numType = new VTemplateType(Set.of(intType, doubleType));
         var boolType = new VType();
         var anyType = new VTemplateType(null);
-        var addFunction = new VFunctionDefinition("add", new VFunctionSignature(List.of(numType, numType), numType), (sig, a) -> new VValue(sig.outputType(), ((Number) a.get(0).value()).doubleValue() + ((Number) a.get(1).value()).doubleValue()));
-        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(List.of(boolType, anyType, anyType), anyType), (sig, a) -> new VValue(sig.outputType(), (boolean) a.get(0).value() ? a.get(1).value() : a.get(2).value()));
+        var addFunction = new VFunctionDefinition("add", new VFunctionSignature(List.of(numType, numType), numType), (ctx, sig, a) -> new VValue(sig.outputType(), ((Number) a.get(0).value()).doubleValue() + ((Number) a.get(1).value()).doubleValue()));
+        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(List.of(boolType, anyType, anyType), anyType), (ctx, sig, a) -> new VValue(sig.outputType(), (boolean) a.get(0).value() ? a.get(1).value() : a.get(2).value()));
         var program = VExpression.functionApplication(ifElseFunction,
                 VExpression.functionApplication(ifElseFunction,
                         VExpression.value(boolType, true),
@@ -58,7 +58,7 @@ public class EvaluationTest {
                 VExpression.value(intType, 25)
         );
         var resolved = Assertions.assertDoesNotThrow(program::resolveTypes);
-        var result = Assertions.assertDoesNotThrow(resolved::evaluate);
+        var result = Assertions.assertDoesNotThrow(() -> resolved.evaluate(evaluationCtx));
         Assertions.assertEquals(intType, result.type());
         Assertions.assertEquals(15, ((Number) result.value()).intValue());
     }
@@ -77,8 +77,8 @@ public class EvaluationTest {
         var anyType = new VTemplateType(null);
         evaluationCtx.addName(anyType, "any");
 
-        var addFunction = new VFunctionDefinition("add", new VFunctionSignature(List.of(numType, numType), numType), (sig, a) -> new VValue(sig.outputType(), ((Number) a.get(0).value()).doubleValue() + ((Number) a.get(1).value()).doubleValue()));
-        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(List.of(boolType, anyType, anyType), anyType), (sig, a) -> new VValue(sig.outputType(), (boolean) a.get(0).value() ? a.get(1).value() : a.get(2).value()));
+        var addFunction = new VFunctionDefinition("add", new VFunctionSignature(List.of(numType, numType), numType), (ctx, sig, a) -> new VValue(sig.outputType(), ((Number) a.get(0).value()).doubleValue() + ((Number) a.get(1).value()).doubleValue()));
+        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(List.of(boolType, anyType, anyType), anyType), (ctx, sig, a) -> new VValue(sig.outputType(), (boolean) a.get(0).value() ? a.get(1).value() : a.get(2).value()));
         var program = VExpression.functionApplication(ifElseFunction,
                 VExpression.functionApplication(ifElseFunction,
                         VExpression.value(boolType, true),

@@ -5,10 +5,7 @@ import com.williambl.vampilang.lang.function.VFunctionSignature;
 import com.williambl.vampilang.lang.type.VType;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
+import java.util.*;
 
 public sealed interface VExpression {
     public static VExpression functionApplication(VFunctionDefinition function, VExpression... inputs) {
@@ -50,12 +47,25 @@ public sealed interface VExpression {
         }
 
         @Override
-        public VValue evaluate() {
+        public VValue evaluate(EvaluationContext ctx) {
             if (this.resolvedSignature == null) {
-                return this.resolveTypes().evaluate();
+                return this.resolveTypes().evaluate(ctx);
             }
 
-            return this.function.function().apply(this.resolvedSignature, this.inputs.stream().map(VExpression::evaluate).toList());
+            return this.function.function().apply(ctx, this.resolvedSignature, this.inputs.stream().map(expr -> expr.evaluate(ctx)).toList());
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || this.getClass() != o.getClass()) return false;
+            FunctionApplication that = (FunctionApplication) o;
+            return Objects.equals(this.function, that.function) && Objects.equals(this.resolvedSignature, that.resolvedSignature) && Objects.equals(this.inputs, that.inputs);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(this.function, this.resolvedSignature, this.inputs);
         }
     }
     public record Value(VValue value) implements VExpression {
@@ -75,13 +85,25 @@ public sealed interface VExpression {
         }
 
         @Override
-        public VValue evaluate() {
+        public VValue evaluate(EvaluationContext ctx) {
             return this.value();
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || this.getClass() != o.getClass()) return false;
+            Value value1 = (Value) o;
+            return Objects.equals(this.value, value1.value);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(this.value);
         }
     }
     VExpression resolveTypes();
     VType type();
-    VValue evaluate();
-
+    VValue evaluate(EvaluationContext ctx);
     String toString(EvaluationContext ctx);
 }
