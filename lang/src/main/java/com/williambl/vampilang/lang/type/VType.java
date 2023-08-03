@@ -13,7 +13,7 @@ public sealed interface VType permits SimpleVType, VParameterisedType, VTemplate
 
     boolean contains(VType other);
 
-    boolean accepts(Object value); //TODO use this
+    boolean accepts(Object value);
 
     default String toString(TypeNamer ctx) {
         return ctx.name(this);
