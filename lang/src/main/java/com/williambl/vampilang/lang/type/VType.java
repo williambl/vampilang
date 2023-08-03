@@ -40,6 +40,6 @@ public sealed interface VType permits SimpleVType, VParameterisedType, VTemplate
     }
 
     static VParameterisedType createParameterised(VType bare, VType... typeParams) {
-        return new VParameterisedType(bare, List.of(typeParams));
+        return new VParameterisedType(bare, List.of(typeParams), (t, o) -> bare.accepts(o));
     }
 }

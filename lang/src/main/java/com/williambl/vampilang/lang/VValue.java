@@ -7,6 +7,14 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 
 public record VValue(VType type, Object value) {
+    public VValue(VType type, Object value) {
+        this.type = type;
+        this.value = value;
+        if (!this.type.accepts(this.value)) {
+            throw new IllegalArgumentException("Type %s does not accept value %s!".formatted(this.type, this.value));
+        }
+    }
+
     @SuppressWarnings("unchecked")
     public <T> T get(TypedVType<T> type) {
         if (this.type.equals(type)) {

@@ -12,10 +12,12 @@ import java.util.stream.Collectors;
 public final class VParameterisedType implements VType {
     public final VType bareType;
     public final List<VType> parameters;
+    private final BiPredicate<VParameterisedType, Object> predicate;
 
-    VParameterisedType(VType bareType, List<VType> parameters) {
+    VParameterisedType(VType bareType, List<VType> parameters, BiPredicate<VParameterisedType, Object> predicate) {
         this.bareType = bareType;
         this.parameters = parameters;
+        this.predicate = predicate;
     }
 
     @Override
@@ -25,7 +27,7 @@ public final class VParameterisedType implements VType {
                 uniquisedTemplates.put(type, type.uniquise(uniquisedTemplates));
             }
         }
-        return new VParameterisedType(this.bareType, this.parameters.stream().map(uniquisedTemplates::get).toList());
+        return new VParameterisedType(this.bareType, this.parameters.stream().map(uniquisedTemplates::get).toList(), predicate);
     }
 
     @Override
@@ -38,7 +40,7 @@ public final class VParameterisedType implements VType {
 
     @Override
     public boolean accepts(Object value) {
-        return false; //TODO
+        return this.predicate.test(this, value);
     }
 
     private static <A, B> boolean checkBiPredicateOnLists(List<A> a, List<B> b, BiPredicate<A, B> predicate) {
@@ -63,11 +65,11 @@ public final class VParameterisedType implements VType {
     public VParameterisedType with(int index, VType type) {
         var newParams = new ArrayList<>(this.parameters);
         newParams.set(index, type);
-        return new VParameterisedType(this.bareType, newParams);
+        return new VParameterisedType(this.bareType, newParams, predicate);
     }
 
     public VType with(List<VType> assignment) {
-        return new VParameterisedType(this.bareType, assignment);
+        return new VParameterisedType(this.bareType, assignment, predicate);
     }
 
     @Override
