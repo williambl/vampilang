@@ -35,18 +35,4 @@ public final class VTemplateType implements VType {
     public String toString(EvaluationContext ctx) {
         return VType.super.toString(ctx) + (this.bounds == null ? "" : "["+this.bounds.stream().map(b -> b.toString(ctx)).sorted().collect(Collectors.joining("|"))+"]");
     }
-
-    //FIXME maybe we shouldn't do this? breaks uniquise
-    @Override
-    public boolean equals(Object o) {
-        if (this == o) return true;
-        if (o == null || this.getClass() != o.getClass()) return false;
-        VTemplateType that = (VTemplateType) o;
-        return Objects.equals(this.bounds, that.bounds);
-    }
-
-    @Override
-    public int hashCode() {
-        return Objects.hash(this.bounds);
-    }
 }
