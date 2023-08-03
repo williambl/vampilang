@@ -22,8 +22,7 @@ public class StandardVFunctions {
                     Map.of("cases", StandardVTypes.LIST.with(0, StandardVTypes.MATCH_CASE), "default", StandardVTypes.TEMPLATE_ANY),
                     StandardVTypes.TEMPLATE_ANY),
             (ctx, sig, args) -> {
-                @SuppressWarnings("unchecked")
-                List<Map.Entry<Boolean, Object>> cases = (List<Map.Entry<Boolean, Object>>) args.get("cases").value();
+                List<Map.Entry<Boolean, Object>> cases = args.get("cases").getUnchecked();
                 Object defaultVal = args.get("default").value();
                 return new VValue(sig.outputType(), cases.stream().filter(Map.Entry::getKey).map(Map.Entry::getValue).findFirst().orElse(defaultVal));
             });

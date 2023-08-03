@@ -38,9 +38,8 @@ public final class ArithmeticVFunctions {
             Map.of("coefficients", StandardVTypes.LIST.with(0, StandardVTypes.NUMBER), "input", StandardVTypes.NUMBER),
             StandardVTypes.NUMBER),
             (ctx, sig, args) -> {
-                @SuppressWarnings("unchecked")
-                List<Double> coefficients = (List<Double>) args.get("coefficients").value();
-                double input = (double) args.get("input").value();
+                List<Double> coefficients = args.get("coefficients").getUnchecked();
+                double input = args.get("input").get(StandardVTypes.NUMBER);
                 double result = 0;
                 for (int i = 0; i < coefficients.size(); i++) {
                     result += coefficients.get(i) * Math.pow(input, i);
@@ -53,7 +52,7 @@ public final class ArithmeticVFunctions {
         return new VFunctionDefinition(
                 name,
                 new VFunctionSignature(Map.of("a", StandardVTypes.NUMBER, "b", StandardVTypes.NUMBER), StandardVTypes.NUMBER),
-                (ctx, sig, args) -> new VValue(sig.outputType(), operator.applyAsDouble((Double) args.get("a").value(), (Double) args.get("b").value())));
+                (ctx, sig, args) -> new VValue(sig.outputType(), operator.applyAsDouble(args.get("a").get(StandardVTypes.NUMBER), args.get("b").get(StandardVTypes.NUMBER))));
     }
 
     public static VFunctionDefinition fromUnaryOperator(String name, DoubleUnaryOperator operator) {
