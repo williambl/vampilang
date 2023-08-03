@@ -17,9 +17,9 @@ import java.util.Set;
 public class TypeInferenceTest {
     @Test
     public void correctlyInfersSingleTypeVariable() {
-        var templateType = new VTemplateType(null);
+        var templateType = VType.createTemplate();
         var identityFunctionSignature = new VFunctionSignature(Map.of("x", templateType), templateType);
-        var concreteType = new VType();
+        var concreteType = VType.create();
         var resolvedFunctionSignature = identityFunctionSignature.resolveTypes(Map.of("x", concreteType));
         Assertions.assertFalse(resolvedFunctionSignature.inputTypes().get("x") instanceof VTemplateType);
         Assertions.assertFalse(resolvedFunctionSignature.outputType() instanceof VTemplateType);
@@ -29,11 +29,11 @@ public class TypeInferenceTest {
 
     @Test
     public void correctlyInfersTypeVariableWithTwoMatchingInputTypes() {
-        var templateType = new VTemplateType(null);
+        var templateType = VType.createTemplate();
         var functionSignature = new VFunctionSignature(Map.of("a", templateType, "b", templateType), templateType);
-        var concreteTypeA = new VType();
-        var concreteTypeB = new VType();
-        var aOrBType = new VTemplateType(Set.of(concreteTypeA, concreteTypeB));
+        var concreteTypeA = VType.create();
+        var concreteTypeB = VType.create();
+        var aOrBType = VType.createTemplate(concreteTypeA, concreteTypeB);
         var resolvedFunctionSignature = Assertions.assertDoesNotThrow(() -> functionSignature.resolveTypes(Map.of("a", concreteTypeA, "b", aOrBType)));
         Assertions.assertEquals(aOrBType, resolvedFunctionSignature.inputTypes().get("a"));
         Assertions.assertEquals(aOrBType, resolvedFunctionSignature.inputTypes().get("b"));
@@ -42,23 +42,23 @@ public class TypeInferenceTest {
 
     @Test
     public void failsToInferNonMatchingInputTypes() {
-        var templateType = new VTemplateType(null);
+        var templateType = VType.createTemplate();
         var functionSignature = new VFunctionSignature(Map.of("a", templateType, "b", templateType), templateType);
-        var concreteTypeA = new VType();
-        var concreteTypeB = new VType();
+        var concreteTypeA = VType.create();
+        var concreteTypeB = VType.create();
         Assertions.assertThrows(IllegalStateException.class, () -> functionSignature.resolveTypes(Map.of("a", concreteTypeA, "b", concreteTypeB)));
     }
 
     @Test
     public void correctlyInfersParameterisedType() {
         var ctx = new EvaluationContext();
-        var bareListType = new VType();     // List
+        var bareListType = VType.create();     // List
         ctx.addName(bareListType, "List");
-        var templateType = new VTemplateType(null); // Any
+        var templateType = VType.createTemplate(); // Any
         ctx.addName(templateType, "Any");
-        var listType = new VParameterisedType(bareListType, List.of(templateType)); // List<? extends Any>
+        var listType = VType.createParameterised(bareListType, templateType); // List<? extends Any>
         var functionSignature = new VFunctionSignature(Map.of("a", listType), templateType); // <T extends Any> (List<T>) -> T
-        var aType = new VType();    // A
+        var aType = VType.create();    // A
         ctx.addName(aType, "A");
         var aListType = listType.with(0, aType);    // List<A>
         var resolvedFunctionSignature = Assertions.assertDoesNotThrow(() -> functionSignature.resolveTypes(Map.of("a", aListType)));

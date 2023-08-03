@@ -18,11 +18,11 @@ public class EvaluationTest {
     @Test
     public void correctlyEvaluatesSimpleProgram() {
         var evaluationCtx = new EvaluationContext();
-        var intType = new VType();
-        var doubleType = new VType();
-        var numType = new VTemplateType(Set.of(intType, doubleType));
-        var boolType = new VType();
-        var anyType = new VTemplateType(null);
+        var intType = VType.create();
+        var doubleType = VType.create();
+        var numType = VType.createTemplate(intType, doubleType);
+        var boolType = VType.create();
+        var anyType = VType.createTemplate();
         var addFunction = new VFunctionDefinition("add", new VFunctionSignature(Map.of("a", numType, "b", numType), numType), (ctx, sig, a) -> new VValue(sig.outputType(), ((Number) a.get("a").value()).doubleValue() + ((Number) a.get("b").value()).doubleValue()));
         var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> new VValue(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value()));
         var program = VExpression.functionApplication(ifElseFunction, Map.of(
@@ -40,11 +40,11 @@ public class EvaluationTest {
     @Test
     public void correctlyEvaluatesProgramWithReuseOfFunction() {
         var evaluationCtx = new EvaluationContext();
-        var intType = new VType();
-        var doubleType = new VType();
-        var numType = new VTemplateType(Set.of(intType, doubleType));
-        var boolType = new VType();
-        var anyType = new VTemplateType(null);
+        var intType = VType.create();
+        var doubleType = VType.create();
+        var numType = VType.createTemplate(intType, doubleType);
+        var boolType = VType.create();
+        var anyType = VType.createTemplate();
         var addFunction = new VFunctionDefinition("add", new VFunctionSignature(Map.of("a", numType, "b", numType), numType), (ctx, sig, a) -> new VValue(sig.outputType(), ((Number) a.get("a").value()).doubleValue() + ((Number) a.get("b").value()).doubleValue()));
         var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> new VValue(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value()));
         var program = VExpression.functionApplication(ifElseFunction, Map.of(
@@ -65,15 +65,15 @@ public class EvaluationTest {
     @Test
     public void correctlyNamesTypesInProgramWithReuseOfFunction() {
         var evaluationCtx = new EvaluationContext();
-        var intType = new VType();
+        var intType = VType.create();
         evaluationCtx.addName(intType, "int");
-        var doubleType = new VType();
+        var doubleType = VType.create();
         evaluationCtx.addName(doubleType, "double");
-        var numType = new VTemplateType(Set.of(intType, doubleType));
+        var numType = VType.createTemplate(intType, doubleType);
         evaluationCtx.addName(numType, "number");
-        var boolType = new VType();
+        var boolType = VType.create();
         evaluationCtx.addName(boolType, "bool");
-        var anyType = new VTemplateType(null);
+        var anyType = VType.createTemplate();
         evaluationCtx.addName(anyType, "any");
 
         var addFunction = new VFunctionDefinition("add", new VFunctionSignature(Map.of("a", numType, "b", numType), numType), (ctx, sig, a) -> new VValue(sig.outputType(), ((Number) a.get("a").value()).doubleValue() + ((Number) a.get("b").value()).doubleValue()));

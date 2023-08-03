@@ -1,5 +1,6 @@
 package com.williambl.vampilang.lang.test;
 
+import com.google.common.reflect.TypeToken;
 import com.williambl.vampilang.lang.type.VParameterisedType;
 import com.williambl.vampilang.lang.type.VTemplateType;
 import com.williambl.vampilang.lang.type.VType;
@@ -12,26 +13,33 @@ import java.util.Set;
 public class TypesTest {
     @Test
     public void typeContainsItself() {
-        var type = new VType();
+        var type = VType.create();
         Assertions.assertTrue(type.contains(type));
     }
 
     @Test
     public void moreGeneralTemplateTypeContainsTypeInBounds() {
-        var type = new VType();
-        var template = new VTemplateType(Set.of(type));
+        var type = VType.create();
+        var template = VType.createTemplate(type);
         Assertions.assertTrue(template.contains(type));
         Assertions.assertFalse(type.contains(template));
     }
 
     @Test
     public void moreGeneralParameterisedTypeContainsSpecificParameterisedType() {
-        var type = new VType();
-        var template = new VTemplateType(Set.of(type));
-        var listBareType = new VType();
-        var generalParamedListType = new VParameterisedType(listBareType, List.of(template));
+        var type = VType.create();
+        var template = VType.createTemplate(type);
+        var listBareType = VType.create();
+        var generalParamedListType = VType.createParameterised(listBareType, template);
         var specificParamedListType = generalParamedListType.with(0, type);
         Assertions.assertTrue(generalParamedListType.contains(specificParamedListType));
         Assertions.assertFalse(specificParamedListType.contains(generalParamedListType));
+    }
+
+    @Test
+    public void typedVTypeAcceptsObjects() {
+        var type = VType.create(TypeToken.of(Double.class));
+        Assertions.assertTrue(type.accepts(5.0));
+        Assertions.assertFalse(type.accepts("hi"));
     }
 }

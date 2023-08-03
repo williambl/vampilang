@@ -9,10 +9,10 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 //TODO dynamic version - e.g. allow all types with a certain 'tag'
-public final class VTemplateType extends VType {
+public final class VTemplateType implements VType {
     public final @Nullable Set<VType> bounds;
 
-    public VTemplateType(@Nullable Set<VType> bounds) {
+    VTemplateType(@Nullable Set<VType> bounds) {
         this.bounds = bounds;
     }
 
@@ -23,14 +23,20 @@ public final class VTemplateType extends VType {
 
     @Override
     public boolean contains(VType other) {
-        return this == other || this.bounds == null || this.bounds.contains(other) || (other instanceof VTemplateType template && template.bounds != null && this.bounds.containsAll(template.bounds));
+        return this.equals(other) || this.bounds == null || this.bounds.contains(other) || (other instanceof VTemplateType template && template.bounds != null && this.bounds.containsAll(template.bounds));
+    }
+
+    @Override
+    public boolean accepts(Object value) {
+        return this.bounds == null || this.bounds.stream().anyMatch(b -> b.accepts(value));
     }
 
     @Override
     public String toString(EvaluationContext ctx) {
-        return super.toString(ctx) + (this.bounds == null ? "" : "["+this.bounds.stream().map(b -> b.toString(ctx)).sorted().collect(Collectors.joining("|"))+"]");
+        return VType.super.toString(ctx) + (this.bounds == null ? "" : "["+this.bounds.stream().map(b -> b.toString(ctx)).sorted().collect(Collectors.joining("|"))+"]");
     }
 
+    //FIXME maybe we shouldn't do this? breaks uniquise
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;

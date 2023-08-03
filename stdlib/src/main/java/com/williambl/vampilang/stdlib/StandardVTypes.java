@@ -1,19 +1,18 @@
 package com.williambl.vampilang.stdlib;
 
-import com.williambl.vampilang.lang.type.VParameterisedType;
-import com.williambl.vampilang.lang.type.VTemplateType;
-import com.williambl.vampilang.lang.type.VType;
+import com.google.common.reflect.TypeToken;
+import com.williambl.vampilang.lang.type.*;
 
 import java.lang.reflect.ParameterizedType;
 import java.util.List;
 
 public final class StandardVTypes {
-    public static final VType NUMBER = new VType();
-    public static final VType STRING = new VType();
-    public static final VType BOOLEAN = new VType();
-    public static final VType TEMPLATE_ANY = new VTemplateType(null);
-    private static final VType RAW_LIST = new VType();
-    public static final VParameterisedType LIST = new VParameterisedType(RAW_LIST, List.of(TEMPLATE_ANY));
-    private static final VType RAW_MATCH_CASE = new VType();
-    public static final VParameterisedType MATCH_CASE = new VParameterisedType(RAW_MATCH_CASE, List.of(BOOLEAN, TEMPLATE_ANY));
+    public static final TypedVType<Double> NUMBER = VType.create(TypeToken.of(Double.class));
+    public static final TypedVType<String> STRING = VType.create(TypeToken.of(String.class));
+    public static final TypedVType<Boolean> BOOLEAN = VType.create(TypeToken.of(Boolean.class));
+    public static final VTemplateType TEMPLATE_ANY = VType.createTemplate();
+    private static final VType RAW_LIST = VType.create();
+    public static final VParameterisedType LIST = VType.createParameterised(RAW_LIST, TEMPLATE_ANY);
+    private static final VType RAW_MATCH_CASE = VType.create();
+    public static final VParameterisedType MATCH_CASE = VType.createParameterised(RAW_MATCH_CASE, BOOLEAN, TEMPLATE_ANY);
 }

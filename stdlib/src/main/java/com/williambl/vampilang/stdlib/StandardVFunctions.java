@@ -7,6 +7,9 @@ import com.williambl.vampilang.lang.function.VFunctionSignature;
 import java.util.List;
 import java.util.Map;
 
+//TODO tests for all these
+//TODO comparisons
+//TODO 'create object' function
 public class StandardVFunctions {
     public static final VFunctionDefinition IF_ELSE = new VFunctionDefinition("if-else",
             new VFunctionSignature(

@@ -29,9 +29,9 @@ import java.util.stream.Collectors;
 public class CodecTest {
     @Test
     public void testDeserialiseSimpleExpression() {
-        var typeA = new VType();
-        var typeB = new VType();
-        var typeAOrB = new VTemplateType(Set.of(typeA, typeB));
+        var typeA = VType.create();
+        var typeB = VType.create();
+        var typeAOrB = VType.createTemplate(typeA, typeB);
         var codecRegistry = new VTypeCodecRegistryImpl();
         codecRegistry.codecs.put(typeA, Codec.INT);
         codecRegistry.codecs.put(typeB, Codec.STRING);
@@ -44,10 +44,10 @@ public class CodecTest {
 
     @Test
     public void testDeserialiseFunctionApplication() {
-        var typeA = new VType();
-        var typeB = new VType();
-        var boolType = new VType();
-        var typeAOrB = new VTemplateType(Set.of(typeA, typeB));
+        var typeA = VType.create();
+        var typeB = VType.create();
+        var boolType = VType.create();
+        var typeAOrB = VType.createTemplate(typeA, typeB);
         var codecRegistry = new VTypeCodecRegistryImpl();
         var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", typeAOrB, "b", typeAOrB), typeAOrB), (ctx, sig, a) -> new VValue(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value()));
         codecRegistry.codecs.put(typeA, Codec.INT);
@@ -72,11 +72,11 @@ public class CodecTest {
 
     @Test
     public void testDeserialiseSimpleExpressionWithParameterisedType() {
-        var typeA = new VType();
-        var typeB = new VType();
-        var typeAOrB = new VTemplateType(Set.of(typeA, typeB));
-        var bareListType = new VType();
-        var listType = new VParameterisedType(bareListType, List.of(typeAOrB));
+        var typeA = VType.create();
+        var typeB = VType.create();
+        var typeAOrB = VType.createTemplate(typeA, typeB);
+        var bareListType = VType.create();
+        var listType = VType.createParameterised(bareListType, typeAOrB);
         var aListType = listType.with(0, typeA);
         var codecRegistry = new VTypeCodecRegistryImpl();
         codecRegistry.codecs.put(typeA, Codec.INT);
@@ -91,11 +91,11 @@ public class CodecTest {
 
     @Test
     public void testDeserialiseSimpleExpressionWithParameterisedTypeWithDynamicCodec() {
-        var typeA = new VType();
-        var typeB = new VType();
-        var typeAOrB = new VTemplateType(Set.of(typeA, typeB));
-        var bareListType = new VType();
-        var listType = new VParameterisedType(bareListType, List.of(typeAOrB));
+        var typeA = VType.create();
+        var typeB = VType.create();
+        var typeAOrB = VType.createTemplate(typeA, typeB);
+        var bareListType = VType.create();
+        var listType = VType.createParameterised(bareListType, typeAOrB);
         var codecRegistry = new VTypeCodecRegistryImpl();
         codecRegistry.codecs.put(typeA, Codec.INT);
         codecRegistry.codecs.put(typeB, Codec.STRING);
@@ -117,10 +117,10 @@ public class CodecTest {
 
     @Test
     public void testSerialiseFunctionApplication() {
-        var typeA = new VType();
-        var typeB = new VType();
-        var boolType = new VType();
-        var typeAOrB = new VTemplateType(Set.of(typeA, typeB));
+        var typeA = VType.create();
+        var typeB = VType.create();
+        var boolType = VType.create();
+        var typeAOrB = VType.createTemplate(typeA, typeB);
         var codecRegistry = new VTypeCodecRegistryImpl();
         var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", typeAOrB, "b", typeAOrB), typeAOrB), (ctx, sig, a) -> new VValue(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value()));
         codecRegistry.codecs.put(typeA, Codec.INT);
@@ -142,12 +142,12 @@ public class CodecTest {
 
     @Test
     public void testSerialiseFunctionApplicationWithParameterisedTypes() {
-        var typeA = new VType();
-        var typeB = new VType();
-        var boolType = new VType();
-        var typeAOrB = new VTemplateType(Set.of(typeA, typeB));
-        var bareListType = new VType();
-        var listType = new VParameterisedType(bareListType, List.of(typeAOrB));
+        var typeA = VType.create();
+        var typeB = VType.create();
+        var boolType = VType.create();
+        var typeAOrB = VType.createTemplate(typeA, typeB);
+        var bareListType = VType.create();
+        var listType = VType.createParameterised(bareListType, typeAOrB);
         var aListType = listType.with(0, typeA);
         var bListType = listType.with(0, typeB);
         var codecRegistry = new VTypeCodecRegistryImpl();
@@ -191,9 +191,9 @@ public class CodecTest {
 
         @Override
         public Map<VType, Codec<?>> codecsMatching(VType type) {
-            return this.allTypesMatching(type).stream().collect(Collectors.toMap(
-                    Function.identity(),
-                    this::rawCodecForType));
+            return this.allTypesMatching(type).stream().map(t -> Optional.ofNullable(this.rawCodecForType(t)).map(v -> Map.entry(t, v))).filter(Optional::isPresent).map(Optional::get).collect(Collectors.toMap(
+                    Map.Entry::getKey,
+                    Map.Entry::getValue));
         }
 
         public Set<VType> allTypesMatching(VType type) {

@@ -9,11 +9,11 @@ import java.util.Objects;
 import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 
-public final class VParameterisedType extends VType {
+public final class VParameterisedType implements VType {
     public final VType bareType;
     public final List<VType> parameters;
 
-    public VParameterisedType(VType bareType, List<VType> parameters) {
+    VParameterisedType(VType bareType, List<VType> parameters) {
         this.bareType = bareType;
         this.parameters = parameters;
     }
@@ -30,10 +30,15 @@ public final class VParameterisedType extends VType {
 
     @Override
     public boolean contains(VType other) {
-        return this == other || (other instanceof VParameterisedType paramed
+        return this.equals(other) || (other instanceof VParameterisedType paramed
                 && paramed.bareType.equals(this.bareType)
                 && (paramed.parameters.equals(this.parameters)
                 || (paramed.parameters.size() == this.parameters.size() && checkBiPredicateOnLists(this.parameters, paramed.parameters, VType::contains))));
+    }
+
+    @Override
+    public boolean accepts(Object value) {
+        return false;
     }
 
     private static <A, B> boolean checkBiPredicateOnLists(List<A> a, List<B> b, BiPredicate<A, B> predicate) {
