@@ -24,15 +24,7 @@ public class ValueCodec implements Codec<VExpression.Value> {
     }
 
     private Map<VType, ? extends Codec<?>> getCodecs() {
-        if (this.type instanceof VTemplateType template) {
-            if (template.bounds == null) {
-                return this.vTypeCodecs.allCodecs();
-            } else {
-                return template.bounds.stream().collect(Collectors.toMap(Function.identity(), this.vTypeCodecs::rawCodecForType) );
-            }
-        }
-
-        return Map.of(this.type, this.vTypeCodecs.rawCodecForType(this.type));
+        return this.vTypeCodecs.codecsMatching(this.type);
     }
 
     @Override

@@ -10,6 +10,6 @@ import java.util.Map;
 
 public interface VTypeCodecRegistry {
     Codec<?> rawCodecForType(VType type);
-    Map<VType, Codec<?>> allCodecs();
+    Map<VType, Codec<?>> codecsMatching(VType type);
     Codec<VExpression> expressionCodecForType(VType type);
 }

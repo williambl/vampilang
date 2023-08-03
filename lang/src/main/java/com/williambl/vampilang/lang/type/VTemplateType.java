@@ -4,6 +4,7 @@ import com.williambl.vampilang.lang.EvaluationContext;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -28,5 +29,18 @@ public final class VTemplateType extends VType {
     @Override
     public String toString(EvaluationContext ctx) {
         return super.toString(ctx) + (this.bounds == null ? "" : "["+this.bounds.stream().map(b -> b.toString(ctx)).sorted().collect(Collectors.joining("|"))+"]");
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || this.getClass() != o.getClass()) return false;
+        VTemplateType that = (VTemplateType) o;
+        return Objects.equals(this.bounds, that.bounds);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.bounds);
     }
 }

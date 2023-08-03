@@ -1,5 +1,6 @@
 package com.williambl.vampilang.codec.test;
 
+import com.google.common.collect.Sets;
 import com.google.gson.JsonParser;
 import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
@@ -14,13 +15,16 @@ import com.williambl.vampilang.lang.VExpression;
 import com.williambl.vampilang.lang.VValue;
 import com.williambl.vampilang.lang.function.VFunctionDefinition;
 import com.williambl.vampilang.lang.function.VFunctionSignature;
+import com.williambl.vampilang.lang.type.VParameterisedType;
 import com.williambl.vampilang.lang.type.VTemplateType;
 import com.williambl.vampilang.lang.type.VType;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.util.*;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public class CodecTest {
     @Test
@@ -66,6 +70,24 @@ public class CodecTest {
         }
     }
 
+    @Test
+    public void testDeserialiseSimpleExpressionWithParameterisedType() {
+        var typeA = new VType();
+        var typeB = new VType();
+        var typeAOrB = new VTemplateType(Set.of(typeA, typeB));
+        var bareListType = new VType();
+        var listType = new VParameterisedType(bareListType, List.of(typeAOrB));
+        var aListType = listType.with(0, typeA);
+        var codecRegistry = new VTypeCodecRegistryImpl();
+        codecRegistry.codecs.put(typeA, Codec.INT);
+        codecRegistry.codecs.put(typeB, Codec.STRING);
+        codecRegistry.codecs.put(aListType, Codec.INT.listOf());
+        var listValueCodec = new ValueCodec(listType, codecRegistry);
+        var res = listValueCodec.decode(JsonOps.INSTANCE, JsonParser.parseString("[3, 4, 5]"));
+        Assertions.assertTrue(res.result().isPresent());
+        var resExpr = res.result().get().getFirst();
+        Assertions.assertEquals(List.of(3, 4, 5), resExpr.evaluate(new EvaluationContext()).value());
+    }
 
     @Test
     public void testSerialiseFunctionApplication() {
@@ -92,6 +114,36 @@ public class CodecTest {
         }
     }
 
+    @Test
+    public void testSerialiseFunctionApplicationWithParameterisedTypes() {
+        var typeA = new VType();
+        var typeB = new VType();
+        var boolType = new VType();
+        var typeAOrB = new VTemplateType(Set.of(typeA, typeB));
+        var bareListType = new VType();
+        var listType = new VParameterisedType(bareListType, List.of(typeAOrB));
+        var aListType = listType.with(0, typeA);
+        var bListType = listType.with(0, typeB);
+        var codecRegistry = new VTypeCodecRegistryImpl();
+        var getFunction = new VFunctionDefinition("get", new VFunctionSignature(Map.of("index", typeA, "a", listType), typeAOrB), (ctx, sig, a) -> new VValue(sig.outputType(), ((List<?>) a.get("a").value()).get((Integer) a.get("index").value())));
+        codecRegistry.codecs.put(typeA, Codec.INT);
+        codecRegistry.codecs.put(typeB, Codec.STRING);
+        codecRegistry.codecs.put(boolType, Codec.BOOL);
+        codecRegistry.codecs.put(aListType, Codec.INT.listOf());
+        codecRegistry.codecs.put(bListType, Codec.STRING.listOf());
+        codecRegistry.functions.put("get", getFunction);
+        {
+            var codec = codecRegistry.expressionCodecForType(typeAOrB);
+            var res = codec.encodeStart(JsonOps.INSTANCE, VExpression.functionApplication(getFunction, Map.of(
+                    "index", VExpression.value(typeA, 0),
+                    "a", VExpression.value(bListType, List.of(":)"))
+            )));
+            Assertions.assertTrue(res.result().isPresent());
+            var resJson = res.result().get();
+            Assertions.assertEquals(JsonParser.parseString("{\"function\": \"get\", \"value\": {\"index\": 0, \"a\": [\":)\"]}}"), resJson);
+        }
+    }
+
     private static class VTypeCodecRegistryImpl implements VTypeCodecRegistry {
         private final Map<VType, Codec<?>> codecs = new HashMap<>();
         private final Map<String, VFunctionDefinition> functions = new HashMap<>();
@@ -104,8 +156,31 @@ public class CodecTest {
         }
 
         @Override
-        public Map<VType, Codec<?>> allCodecs() {
-            return Map.copyOf(this.codecs);
+        public Map<VType, Codec<?>> codecsMatching(VType type) {
+            return this.allTypesMatching(type).stream().filter(this.codecs::containsKey).collect(Collectors.toMap(
+                    Function.identity(),
+                    this.codecs::get));
+        }
+
+        public Set<VType> allTypesMatching(VType type) {
+            Set<VType> set = new HashSet<>();
+            if (type instanceof VTemplateType template) {
+                if (template.bounds == null) {
+                    set.addAll(this.codecs.keySet());
+                } else {
+                    set.addAll(template.bounds.stream().map(this::allTypesMatching).flatMap(Set::stream).toList());
+                }
+            } else if (type instanceof VParameterisedType paramed) {
+                List<Set<VType>> typesMatchingEachParam = new ArrayList<>();
+                for (int i = 0; i < paramed.parameters.size(); i++) {
+                    typesMatchingEachParam.add(this.allTypesMatching(paramed.parameters.get(i)));
+                }
+                Sets.cartesianProduct(typesMatchingEachParam).forEach(assignment -> set.add(paramed.with(assignment)));
+            } else {
+                set.add(type);
+            }
+
+            return set;
         }
 
         @Override

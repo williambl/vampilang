@@ -5,6 +5,7 @@ import com.williambl.vampilang.lang.EvaluationContext;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 
@@ -58,5 +59,22 @@ public final class VParameterisedType extends VType {
         var newParams = new ArrayList<>(this.parameters);
         newParams.set(index, type);
         return new VParameterisedType(this.bareType, newParams);
+    }
+
+    public VType with(List<VType> assignment) {
+        return new VParameterisedType(this.bareType, assignment);
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || this.getClass() != o.getClass()) return false;
+        VParameterisedType that = (VParameterisedType) o;
+        return Objects.equals(this.bareType, that.bareType) && Objects.equals(this.parameters, that.parameters);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.bareType, this.parameters);
     }
 }
