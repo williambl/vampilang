@@ -61,7 +61,8 @@ public sealed interface VExpression {
                 return this.resolveTypes(new EvaluationContext.Spec()).evaluate(ctx);
             }
 
-            return this.function.function().apply(ctx, this.resolvedSignature, this.inputs.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, kv -> kv.getValue().evaluate(ctx))));
+            Map<String, VValue> evaluatedInputs = new HashMap<>();
+            return this.function.function().apply(ctx, this.resolvedSignature, s -> evaluatedInputs.computeIfAbsent(s, k -> this.inputs.get(k).evaluate(ctx)));
         }
 
         @Override

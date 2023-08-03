@@ -9,7 +9,7 @@ import java.util.Map;
 
 //TODO tests for all these
 //TODO comparisons
-//TODO 'create object' function
+//TODO 'create object' function (maybe better as an expression type)
 public class StandardVFunctions {
     public static final VFunctionDefinition IF_ELSE = new VFunctionDefinition("if-else",
             new VFunctionSignature(
