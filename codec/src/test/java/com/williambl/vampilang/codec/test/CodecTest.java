@@ -90,6 +90,32 @@ public class CodecTest {
     }
 
     @Test
+    public void testDeserialiseSimpleExpressionWithParameterisedTypeWithDynamicCodec() {
+        var typeA = new VType();
+        var typeB = new VType();
+        var typeAOrB = new VTemplateType(Set.of(typeA, typeB));
+        var bareListType = new VType();
+        var listType = new VParameterisedType(bareListType, List.of(typeAOrB));
+        var codecRegistry = new VTypeCodecRegistryImpl();
+        codecRegistry.codecs.put(typeA, Codec.INT);
+        codecRegistry.codecs.put(typeB, Codec.STRING);
+        codecRegistry.parameterisedTypeCodecs.put(bareListType, t -> codecRegistry.rawCodecForType(t.parameters.get(0)).listOf());
+        var listValueCodec = new ValueCodec(listType, codecRegistry);
+        {
+            var res = listValueCodec.decode(JsonOps.INSTANCE, JsonParser.parseString("[3, 4, 5]"));
+            Assertions.assertTrue(res.result().isPresent());
+            var resExpr = res.result().get().getFirst();
+            Assertions.assertEquals(List.of(3, 4, 5), resExpr.evaluate(new EvaluationContext()).value());
+        }
+        {
+            var res = listValueCodec.decode(JsonOps.INSTANCE, JsonParser.parseString("[\"hi\", \"test\"]"));
+            Assertions.assertTrue(res.result().isPresent());
+            var resExpr = res.result().get().getFirst();
+            Assertions.assertEquals(List.of("hi", "test"), resExpr.evaluate(new EvaluationContext()).value());
+        }
+    }
+
+    @Test
     public void testSerialiseFunctionApplication() {
         var typeA = new VType();
         var typeB = new VType();
@@ -146,20 +172,28 @@ public class CodecTest {
 
     private static class VTypeCodecRegistryImpl implements VTypeCodecRegistry {
         private final Map<VType, Codec<?>> codecs = new HashMap<>();
+        private final Map<VType, Function<VParameterisedType, Codec<?>>> parameterisedTypeCodecs = new HashMap<>();
         private final Map<String, VFunctionDefinition> functions = new HashMap<>();
         //TODO create our own dispatch codec that works like the mc registry ones (or just.. use the mc registry one)
         private final Codec<VExpression.FunctionApplication> functionCodec = new KeyDispatchCodec<>("function", Codec.STRING, (VExpression.FunctionApplication f) -> DataResult.success(f.function().name()), k -> Optional.ofNullable(this.functions.get(k)).map(f -> new FunctionApplicationCodec(f, this)).map(DataResult::success).orElseGet(() -> DataResult.error(() -> "No function found"))).codec();
 
         @Override
         public Codec<?> rawCodecForType(VType type) {
-            return this.codecs.get(type);
+            var res = this.codecs.get(type);
+            if (res == null && type instanceof VParameterisedType paramed && this.parameterisedTypeCodecs.containsKey(paramed.bareType)) {
+                var codec = this.parameterisedTypeCodecs.get(paramed.bareType).apply(paramed);
+                this.codecs.put(paramed, codec);
+                return codec;
+            }
+
+            return res;
         }
 
         @Override
         public Map<VType, Codec<?>> codecsMatching(VType type) {
-            return this.allTypesMatching(type).stream().filter(this.codecs::containsKey).collect(Collectors.toMap(
+            return this.allTypesMatching(type).stream().collect(Collectors.toMap(
                     Function.identity(),
-                    this.codecs::get));
+                    this::rawCodecForType));
         }
 
         public Set<VType> allTypesMatching(VType type) {

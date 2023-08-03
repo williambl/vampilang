@@ -1,8 +1,10 @@
 package com.williambl.vampilang.stdlib;
 
+import com.williambl.vampilang.lang.VValue;
 import com.williambl.vampilang.lang.function.VFunctionDefinition;
 import com.williambl.vampilang.lang.function.VFunctionSignature;
 
+import java.util.List;
 import java.util.Map;
 
 public class StandardVFunctions {
@@ -14,7 +16,12 @@ public class StandardVFunctions {
 
     public static final VFunctionDefinition MATCH = new VFunctionDefinition("match",
             new VFunctionSignature(
-                    Map.of("cases", StandardVTypes.MATCH_CASE, "default", StandardVTypes.TEMPLATE_ANY),
+                    Map.of("cases", StandardVTypes.LIST.with(0, StandardVTypes.MATCH_CASE), "default", StandardVTypes.TEMPLATE_ANY),
                     StandardVTypes.TEMPLATE_ANY),
-            (ctx, sig, args) -> )
+            (ctx, sig, args) -> {
+                @SuppressWarnings("unchecked")
+                List<Map.Entry<Boolean, Object>> cases = (List<Map.Entry<Boolean, Object>>) args.get("cases").value();
+                Object defaultVal = args.get("default").value();
+                return new VValue(sig.outputType(), cases.stream().filter(Map.Entry::getKey).map(Map.Entry::getValue).findFirst().orElse(defaultVal));
+            });
 }
