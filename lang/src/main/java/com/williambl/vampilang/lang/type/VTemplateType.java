@@ -1,10 +1,9 @@
 package com.williambl.vampilang.lang.type;
 
-import com.williambl.vampilang.lang.EvaluationContext;
+import com.williambl.vampilang.lang.TypeNamer;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashMap;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -32,7 +31,7 @@ public final class VTemplateType implements VType {
     }
 
     @Override
-    public String toString(EvaluationContext ctx) {
+    public String toString(TypeNamer ctx) {
         return VType.super.toString(ctx) + (this.bounds == null ? "" : "["+this.bounds.stream().map(b -> b.toString(ctx)).sorted().collect(Collectors.joining("|"))+"]");
     }
 }

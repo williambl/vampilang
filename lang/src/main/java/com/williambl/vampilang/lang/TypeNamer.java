@@ -5,20 +5,20 @@ import com.williambl.vampilang.lang.type.VType;
 import java.util.HashMap;
 import java.util.Map;
 
-public class EvaluationContext {
+public class TypeNamer {
     private final Map<VType, String> typeNames = new HashMap<>();
     private int anonymousTypeNumberCount = 0;
 
-    public EvaluationContext() {
+    public TypeNamer() {
     }
 
-    public EvaluationContext(EvaluationContext copyOf) {
+    public TypeNamer(TypeNamer copyOf) {
         this();
         this.typeNames.putAll(copyOf.typeNames);
         this.anonymousTypeNumberCount = copyOf.anonymousTypeNumberCount;
     }
 
-    public EvaluationContext addName(VType type, String name) {
+    public TypeNamer addName(VType type, String name) {
         this.typeNames.put(type, name);
         return this;
     }

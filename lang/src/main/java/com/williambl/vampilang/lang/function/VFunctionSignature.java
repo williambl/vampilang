@@ -1,6 +1,6 @@
 package com.williambl.vampilang.lang.function;
 
-import com.williambl.vampilang.lang.EvaluationContext;
+import com.williambl.vampilang.lang.TypeNamer;
 import com.williambl.vampilang.lang.type.VParameterisedType;
 import com.williambl.vampilang.lang.type.VType;
 
@@ -57,7 +57,7 @@ public record VFunctionSignature(Map<String, VType> inputTypes, VType outputType
         }
     }
 
-    public String toString(EvaluationContext ctx) {
+    public String toString(TypeNamer ctx) {
         var builder = new StringBuilder();
         var entries = new ArrayList<>(this.inputTypes.entrySet());
         entries.sort(Map.Entry.comparingByKey());

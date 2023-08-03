@@ -1,18 +1,13 @@
 package com.williambl.vampilang.lang.test;
 
-import com.williambl.vampilang.lang.EvaluationContext;
-import com.williambl.vampilang.lang.VValue;
-import com.williambl.vampilang.lang.function.VFunctionDefinition;
+import com.williambl.vampilang.lang.TypeNamer;
 import com.williambl.vampilang.lang.function.VFunctionSignature;
-import com.williambl.vampilang.lang.type.VParameterisedType;
 import com.williambl.vampilang.lang.type.VTemplateType;
 import com.williambl.vampilang.lang.type.VType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 
 public class TypeInferenceTest {
     @Test
@@ -51,7 +46,7 @@ public class TypeInferenceTest {
 
     @Test
     public void correctlyInfersParameterisedType() {
-        var ctx = new EvaluationContext();
+        var ctx = new TypeNamer();
         var bareListType = VType.create();     // List
         ctx.addName(bareListType, "List");
         var templateType = VType.createTemplate(); // Any

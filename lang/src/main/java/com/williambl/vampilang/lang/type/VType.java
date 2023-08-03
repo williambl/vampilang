@@ -1,7 +1,7 @@
 package com.williambl.vampilang.lang.type;
 
 import com.google.common.reflect.TypeToken;
-import com.williambl.vampilang.lang.EvaluationContext;
+import com.williambl.vampilang.lang.TypeNamer;
 
 import java.util.HashMap;
 import java.util.List;
@@ -15,7 +15,7 @@ public sealed interface VType permits SimpleVType, VParameterisedType, VTemplate
 
     boolean accepts(Object value); //TODO use this
 
-    default String toString(EvaluationContext ctx) {
+    default String toString(TypeNamer ctx) {
         return ctx.name(this);
     }
 

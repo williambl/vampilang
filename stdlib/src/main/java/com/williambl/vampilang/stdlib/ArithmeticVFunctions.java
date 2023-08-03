@@ -37,7 +37,7 @@ public final class ArithmeticVFunctions {
     public static final VFunctionDefinition POLYNOMIAL = new VFunctionDefinition("polynomial", new VFunctionSignature(
             Map.of("coefficients", StandardVTypes.LIST.with(0, StandardVTypes.NUMBER), "input", StandardVTypes.NUMBER),
             StandardVTypes.NUMBER),
-            (ctx, sig, args) -> {
+            (sig, args) -> {
                 List<Double> coefficients = args.get("coefficients").getUnchecked();
                 double input = args.get("input").get(StandardVTypes.NUMBER);
                 double result = 0;
@@ -52,13 +52,13 @@ public final class ArithmeticVFunctions {
         return new VFunctionDefinition(
                 name,
                 new VFunctionSignature(Map.of("a", StandardVTypes.NUMBER, "b", StandardVTypes.NUMBER), StandardVTypes.NUMBER),
-                (ctx, sig, args) -> new VValue(sig.outputType(), operator.applyAsDouble(args.get("a").get(StandardVTypes.NUMBER), args.get("b").get(StandardVTypes.NUMBER))));
+                (sig, args) -> new VValue(sig.outputType(), operator.applyAsDouble(args.get("a").get(StandardVTypes.NUMBER), args.get("b").get(StandardVTypes.NUMBER))));
     }
 
     public static VFunctionDefinition fromUnaryOperator(String name, DoubleUnaryOperator operator) {
         return new VFunctionDefinition(
                 name,
                 new VFunctionSignature(Map.of("operand", StandardVTypes.NUMBER), StandardVTypes.NUMBER),
-                (ctx, sig, args) -> new VValue(sig.outputType(), operator.applyAsDouble((Double) args.get("operand").value())));
+                (sig, args) -> new VValue(sig.outputType(), operator.applyAsDouble((Double) args.get("operand").value())));
     }
 }

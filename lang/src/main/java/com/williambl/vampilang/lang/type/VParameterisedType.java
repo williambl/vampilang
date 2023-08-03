@@ -1,6 +1,6 @@
 package com.williambl.vampilang.lang.type;
 
-import com.williambl.vampilang.lang.EvaluationContext;
+import com.williambl.vampilang.lang.TypeNamer;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -58,7 +58,7 @@ public final class VParameterisedType implements VType {
     }
 
     @Override
-    public String toString(EvaluationContext ctx) {
+    public String toString(TypeNamer ctx) {
         return this.bareType.toString(ctx) + (this.parameters == null ? "" : "<"+this.parameters.stream().map(b -> b.toString(ctx)).sorted().collect(Collectors.joining(","))+">");
     }
 

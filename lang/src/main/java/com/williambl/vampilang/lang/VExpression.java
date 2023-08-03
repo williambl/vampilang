@@ -32,7 +32,7 @@ public sealed interface VExpression {
         }
 
         @Override
-        public String toString(EvaluationContext ctx) {
+        public String toString(TypeNamer ctx) {
             var builder = new StringBuilder();
             builder.append("(function ");
             builder.append(this.function.name());
@@ -52,12 +52,12 @@ public sealed interface VExpression {
         }
 
         @Override
-        public VValue evaluate(EvaluationContext ctx) {
+        public VValue evaluate() {
             if (this.resolvedSignature == null) {
-                return this.resolveTypes().evaluate(ctx);
+                return this.resolveTypes().evaluate();
             }
 
-            return this.function.function().apply(ctx, this.resolvedSignature, this.inputs.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, kv -> kv.getValue().evaluate(ctx))));
+            return this.function.function().apply(this.resolvedSignature, this.inputs.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, kv -> kv.getValue().evaluate())));
         }
 
         @Override
@@ -85,12 +85,12 @@ public sealed interface VExpression {
         }
 
         @Override
-        public String toString(EvaluationContext ctx) {
+        public String toString(TypeNamer ctx) {
             return "(value %s : %s)".formatted(this.value.value(), this.type().toString(ctx));
         }
 
         @Override
-        public VValue evaluate(EvaluationContext ctx) {
+        public VValue evaluate() {
             return this.value();
         }
 
@@ -109,6 +109,6 @@ public sealed interface VExpression {
     }
     VExpression resolveTypes();
     VType type();
-    VValue evaluate(EvaluationContext ctx);
-    String toString(EvaluationContext ctx);
+    VValue evaluate();
+    String toString(TypeNamer ctx);
 }
