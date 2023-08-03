@@ -7,7 +7,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 public final class VTemplateType extends VType {
-    private final @Nullable Set<VType> bounds;
+    public final @Nullable Set<VType> bounds;
 
     public VTemplateType(@Nullable Set<VType> bounds) {
         this.bounds = bounds;

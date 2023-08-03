@@ -5,22 +5,18 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.DynamicOps;
 import com.williambl.vampilang.lang.VExpression;
-import com.williambl.vampilang.lang.VValue;
 import com.williambl.vampilang.lang.function.VFunctionDefinition;
-import com.williambl.vampilang.lang.type.VType;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
-import java.util.function.Function;
 
 public class FunctionApplicationCodec implements Codec<VExpression.FunctionApplication> {
     private final VFunctionDefinition functionDefinition;
-    private final Function<VType, Codec<VExpression>> vTypeCodecs;
+    private final VTypeCodecRegistry vTypeCodecs;
 
-    public FunctionApplicationCodec(VFunctionDefinition functionDefinition, Function<VType, Codec<VExpression>> vTypeCodecs) {
+    public FunctionApplicationCodec(VFunctionDefinition functionDefinition, VTypeCodecRegistry vTypeCodecs) {
         this.functionDefinition = functionDefinition;
-        this.vTypeCodecs = vTypeCodecs; //TODO how to do this?
+        this.vTypeCodecs = vTypeCodecs;
     }
 
     @Override
@@ -32,7 +28,7 @@ public class FunctionApplicationCodec implements Codec<VExpression.FunctionAppli
                 return DataResult.error(() -> "Missing required argument: " + functionInput.getKey());
             }
 
-            var codec = this.vTypeCodecs.apply(functionInput.getValue());
+            var codec = this.vTypeCodecs.expressionCodecForType(functionInput.getValue());
             var decodedInput = codec.decode(ops, encodedInput.get());
             var error = decodedInput.error();
             if (error.isPresent()) {
@@ -48,8 +44,14 @@ public class FunctionApplicationCodec implements Codec<VExpression.FunctionAppli
     @Override
     public <T> DataResult<T> encode(VExpression.FunctionApplication input, DynamicOps<T> ops, T prefix) {
         for (var functionInput : input.inputs().entrySet()) {
-            //TODO
+            var encodedInput = this.vTypeCodecs.expressionCodecForType(functionInput.getValue().type()).encodeStart(ops, functionInput.getValue()).result();
+            if (encodedInput.isEmpty()) {
+                return DataResult.error(() -> "Could not encode argument: " + functionInput.getKey());
+            }
+
+            prefix = ops.set(prefix, functionInput.getKey(), encodedInput.get());
         }
-        return null;
+
+        return DataResult.success(prefix);
     }
 }

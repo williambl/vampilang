@@ -7,10 +7,13 @@ import com.williambl.vampilang.lang.function.VFunctionDefinition;
 import com.williambl.vampilang.lang.type.VType;
 
 public class VExpressionCodecs {
-    public Codec<VExpression.FunctionApplication> createFunctionApplicationCodec(VFunctionDefinition functionDefinition) {
+    /*public Codec<VExpression.FunctionApplication> createFunctionApplicationCodec(VFunctionDefinition functionDefinition) {
+    }
+
+    public Codec<VExpression> createVExpressionCodec(VType overallType) {
     }
 
     public <T> Codec<T> vTypeCodec(VType type) {
         return null; //TODO
-    }
+    }*/
 }
