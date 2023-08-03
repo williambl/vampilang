@@ -24,7 +24,7 @@ import java.util.function.Function;
 
 public class CodecTest {
     @Test
-    public void test() {
+    public void testDeserialiseSimpleExpression() {
         var typeA = new VType();
         var typeB = new VType();
         var typeAOrB = new VTemplateType(Set.of(typeA, typeB));
@@ -35,11 +35,11 @@ public class CodecTest {
         var res = aOrBValueCodec.decode(JsonOps.INSTANCE, JsonParser.parseString("3"));
         Assertions.assertTrue(res.result().isPresent());
         var resExpr = res.result().get().getFirst();
-        Assertions.assertEquals(resExpr.evaluate(new EvaluationContext()).value(), 3);
+        Assertions.assertEquals(3, resExpr.evaluate(new EvaluationContext()).value());
     }
 
     @Test
-    public void testWithFunction() {
+    public void testDeserialiseFunctionApplication() {
         var typeA = new VType();
         var typeB = new VType();
         var boolType = new VType();
@@ -55,14 +55,40 @@ public class CodecTest {
             var res = codec.decode(JsonOps.INSTANCE, JsonParser.parseString("{\"function\": \"if-else\", \"value\": {\"predicate\": true, \"a\": 3, \"b\": 5}}"));
             Assertions.assertTrue(res.result().isPresent());
             var resExpr = res.result().get().getFirst();
-            Assertions.assertEquals(resExpr.evaluate(new EvaluationContext()).value(), 3);
+            Assertions.assertEquals(3, resExpr.evaluate(new EvaluationContext()).value());
         }
         {
             var codec = codecRegistry.expressionCodecForType(typeB);
             var res = codec.decode(JsonOps.INSTANCE, JsonParser.parseString("{\"function\": \"if-else\", \"value\": {\"predicate\": false, \"a\": \"aaa\", \"b\": \"bbb\"}}"));
             Assertions.assertTrue(res.result().isPresent());
             var resExpr = res.result().get().getFirst();
-            Assertions.assertEquals(resExpr.evaluate(new EvaluationContext()).value(), "bbb");
+            Assertions.assertEquals("bbb", resExpr.evaluate(new EvaluationContext()).value());
+        }
+    }
+
+
+    @Test
+    public void testSerialiseFunctionApplication() {
+        var typeA = new VType();
+        var typeB = new VType();
+        var boolType = new VType();
+        var typeAOrB = new VTemplateType(Set.of(typeA, typeB));
+        var codecRegistry = new VTypeCodecRegistryImpl();
+        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", typeAOrB, "b", typeAOrB), typeAOrB), (ctx, sig, a) -> new VValue(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value()));
+        codecRegistry.codecs.put(typeA, Codec.INT);
+        codecRegistry.codecs.put(typeB, Codec.STRING);
+        codecRegistry.codecs.put(boolType, Codec.BOOL);
+        codecRegistry.functions.put("if-else", ifElseFunction);
+        {
+            var codec = codecRegistry.expressionCodecForType(typeAOrB);
+            var res = codec.encodeStart(JsonOps.INSTANCE, VExpression.functionApplication(ifElseFunction, Map.of(
+                    "predicate", VExpression.value(boolType, true),
+                    "a", VExpression.value(typeB, ":)"),
+                    "b", VExpression.value(typeB, ":(")
+            )));
+            Assertions.assertTrue(res.result().isPresent());
+            var resJson = res.result().get();
+            Assertions.assertEquals(JsonParser.parseString("{\"function\": \"if-else\", \"value\": {\"predicate\": true, \"a\": \":)\", \"b\": \":(\"}}"), resJson);
         }
     }
 
