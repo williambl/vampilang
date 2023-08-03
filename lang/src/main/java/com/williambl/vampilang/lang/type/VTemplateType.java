@@ -3,9 +3,11 @@ package com.williambl.vampilang.lang.type;
 import com.williambl.vampilang.lang.EvaluationContext;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.HashMap;
 import java.util.Set;
 import java.util.stream.Collectors;
 
+//TODO dynamic version - e.g. allow all types with a certain 'tag'
 public final class VTemplateType extends VType {
     public final @Nullable Set<VType> bounds;
 
@@ -14,7 +16,7 @@ public final class VTemplateType extends VType {
     }
 
     @Override
-    public VType uniquise() {
+    public VType uniquise(HashMap<VType, VType> uniquisedTemplates) {
         return new VTemplateType(this.bounds);
     }
 

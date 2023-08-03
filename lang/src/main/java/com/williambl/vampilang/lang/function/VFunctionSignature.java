@@ -1,6 +1,7 @@
 package com.williambl.vampilang.lang.function;
 
 import com.williambl.vampilang.lang.EvaluationContext;
+import com.williambl.vampilang.lang.type.VParameterisedType;
 import com.williambl.vampilang.lang.type.VType;
 
 import java.util.*;
@@ -10,9 +11,11 @@ public record VFunctionSignature(Map<String, VType> inputTypes, VType outputType
     public VFunctionSignature uniquise() {
         var uniquisedTemplates = new HashMap<VType, VType>();
         for (var type : this.inputTypes.values()) {
-            uniquisedTemplates.computeIfAbsent(type, $ -> type.uniquise());
+            if (!uniquisedTemplates.containsKey(type)) {
+                uniquisedTemplates.put(type, type.uniquise(uniquisedTemplates));
+            }
         }
-        uniquisedTemplates.computeIfAbsent(this.outputType, $ -> this.outputType.uniquise());
+        uniquisedTemplates.computeIfAbsent(this.outputType, $ -> this.outputType.uniquise(uniquisedTemplates));
         return new VFunctionSignature(
                 this.inputTypes.entrySet().stream()
                         .collect(Collectors.toMap(Map.Entry::getKey, kv -> uniquisedTemplates.get(kv.getValue()))), uniquisedTemplates.get(this.outputType));
@@ -23,20 +26,35 @@ public record VFunctionSignature(Map<String, VType> inputTypes, VType outputType
         for (var key : this.inputTypes.keySet()) {
             var inputType = this.inputTypes.get(key);
             var actualInputType = actualInputs.get(key);
-            if (inputType.isTemplate() && inputType.contains(actualInputType)) {
-                var currentResolution = resolvedTemplates.get(inputType);
-                if (currentResolution != null && !actualInputType.contains(currentResolution)) {
-                    throw new IllegalStateException("cannot reconcile %s and %s".formatted(currentResolution, actualInputs));
-                } else if (currentResolution == null || actualInputType.contains(currentResolution)) {
-                    resolvedTemplates.put(inputType, actualInputType);
-                }
+            if (!inputType.contains(actualInputType)) {
+                throw new IllegalStateException("cannot reconcile %s and %s".formatted(inputType, actualInputs));
             }
+
+            recursivelyResolveTypes(resolvedTemplates, inputType, actualInputType);
         }
 
         return new VFunctionSignature(
                 this.inputTypes.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, kv -> resolvedTemplates.getOrDefault(kv.getValue(), kv.getValue()))),
                 resolvedTemplates.getOrDefault(this.outputType, this.outputType)
         );
+    }
+
+    private static void recursivelyResolveTypes(Map<VType, VType> resolvedTemplates, VType input, VType actual) {
+        if (!actual.contains(input)) { // if actual input type is more specific
+            resolvedTemplates.put(input, actual);
+            if (input instanceof VParameterisedType paramed) {
+                var actualParamed = (VParameterisedType) actual;
+                if (paramed.parameters.size() != actualParamed.parameters.size()) {
+                    throw new IllegalStateException("bug! there is no way %s can contain %s when they have different param types.".formatted(input, actual));
+                }
+
+                for (int i = 0; i < paramed.parameters.size(); i++) {
+                    var inputParam = paramed.parameters.get(i);
+                    var actualParam = actualParamed.parameters.get(i);
+                    recursivelyResolveTypes(resolvedTemplates, inputParam, actualParam);
+                }
+            }
+        }
     }
 
     public String toString(EvaluationContext ctx) {
