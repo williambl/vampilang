@@ -1,6 +1,7 @@
 package com.williambl.vampilang.stdlib.test;
 
 import com.google.common.collect.Sets;
+import com.williambl.vampilang.lang.EvaluationContext;
 import com.williambl.vampilang.lang.VExpression;
 import com.williambl.vampilang.lang.function.VFunctionDefinition;
 import com.williambl.vampilang.stdlib.ArithmeticVFunctions;
@@ -91,7 +92,7 @@ public class ArithmeticVFunctionsTest {
             var coefficientsExpr = VExpression.value(StandardVTypes.LIST.with(0, StandardVTypes.NUMBER), coefficients);
             for (var test : INPUTS) {
                 var expr = VExpression.functionApplication(ArithmeticVFunctions.POLYNOMIAL, Map.of("coefficients", coefficientsExpr, "input", VExpression.value(StandardVTypes.NUMBER, test)));
-                var res = expr.evaluate();
+                var res = expr.evaluate(new EvaluationContext());
                 double result = 0;
                 for (int i = 0; i < coefficients.size(); i++) {
                     result += coefficients.get(i) * Math.pow(test, i);
@@ -107,7 +108,7 @@ public class ArithmeticVFunctionsTest {
     private static void fromBinaryOperator(VFunctionDefinition function, List<BinaryOperatorTestCase> cases) {
         for (var test : cases) {
             var expr = VExpression.functionApplication(function, Map.of("a", VExpression.value(StandardVTypes.NUMBER, test.a()), "b", VExpression.value(StandardVTypes.NUMBER, test.b())));
-            var res = expr.evaluate();
+            var res = expr.evaluate(new EvaluationContext());
             Assertions.assertEquals(StandardVTypes.NUMBER, res.type());
             Assertions.assertEquals(test.res(), res.value());
         }
@@ -116,7 +117,7 @@ public class ArithmeticVFunctionsTest {
     private static void fromUnaryOperator(VFunctionDefinition function, List<UnaryOperatorTestCase> cases) {
         for (var test : cases) {
             var expr = VExpression.functionApplication(function, Map.of("operand", VExpression.value(StandardVTypes.NUMBER, test.operand())));
-            var res = expr.evaluate();
+            var res = expr.evaluate(new EvaluationContext());
             Assertions.assertEquals(StandardVTypes.NUMBER, res.type());
             Assertions.assertEquals(test.res(), res.value());
         }

@@ -21,7 +21,7 @@ public final class LogicVFunctions {
         return new VFunctionDefinition(
                 name,
                 new VFunctionSignature(Map.of("a", StandardVTypes.BOOLEAN, "b", StandardVTypes.BOOLEAN), StandardVTypes.BOOLEAN),
-                (sig, args) -> new VValue(sig.outputType(), operator.apply(args.get("a").get(StandardVTypes.BOOLEAN), args.get("b").get(StandardVTypes.BOOLEAN))));
+                (ctx, sig, args) -> new VValue(sig.outputType(), operator.apply(args.get("a").get(StandardVTypes.BOOLEAN), args.get("b").get(StandardVTypes.BOOLEAN))));
     }
 
     @SuppressWarnings("unchecked")
@@ -36,6 +36,6 @@ public final class LogicVFunctions {
         return new VFunctionDefinition(
                 name,
                 new VFunctionSignature(Map.of("operand", StandardVTypes.BOOLEAN), StandardVTypes.BOOLEAN),
-                (sig, args) -> new VValue(sig.outputType(), operator.apply(args.get("operand").get(StandardVTypes.BOOLEAN))));
+                (ctx, sig, args) -> new VValue(sig.outputType(), operator.apply(args.get("operand").get(StandardVTypes.BOOLEAN))));
     }
 }

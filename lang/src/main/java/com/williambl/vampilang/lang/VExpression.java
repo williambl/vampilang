@@ -17,11 +17,15 @@ public sealed interface VExpression {
         return new Value(new VValue(type, value));
     }
 
+    public static VExpression variable(String name) {
+        return new VariableRef(name, null);
+    }
+
     public record FunctionApplication(VFunctionDefinition function, @Nullable VFunctionSignature resolvedSignature, Map<String, VExpression> inputs) implements VExpression {
 
         @Override
-        public VExpression resolveTypes() {
-            var resolvedInputs = this.inputs.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, kv -> kv.getValue().resolveTypes()));
+        public VExpression resolveTypes(EvaluationContext.Spec spec) {
+            var resolvedInputs = this.inputs.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, kv -> kv.getValue().resolveTypes(spec)));
             var resolvedFunctionSignature = this.function.signature().uniquise().resolveTypes(resolvedInputs.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, kv -> kv.getValue().type())));
             return new FunctionApplication(this.function, resolvedFunctionSignature, resolvedInputs);
         }
@@ -52,12 +56,12 @@ public sealed interface VExpression {
         }
 
         @Override
-        public VValue evaluate() {
+        public VValue evaluate(EvaluationContext ctx) {
             if (this.resolvedSignature == null) {
-                return this.resolveTypes().evaluate();
+                return this.resolveTypes(new EvaluationContext.Spec()).evaluate(ctx);
             }
 
-            return this.function.function().apply(this.resolvedSignature, this.inputs.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, kv -> kv.getValue().evaluate())));
+            return this.function.function().apply(ctx, this.resolvedSignature, this.inputs.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, kv -> kv.getValue().evaluate(ctx))));
         }
 
         @Override
@@ -76,7 +80,7 @@ public sealed interface VExpression {
     public record Value(VValue value) implements VExpression {
 
         @Override
-        public VExpression resolveTypes() {
+        public VExpression resolveTypes(EvaluationContext.Spec spec) {
             return this;
         }
         @Override
@@ -90,7 +94,7 @@ public sealed interface VExpression {
         }
 
         @Override
-        public VValue evaluate() {
+        public VValue evaluate(EvaluationContext ctx) {
             return this.value();
         }
 
@@ -107,8 +111,45 @@ public sealed interface VExpression {
             return Objects.hash(this.value);
         }
     }
-    VExpression resolveTypes();
+
+    public record VariableRef(String name, @Nullable VType resolvedType) implements VExpression {
+
+        @Override
+        public VExpression resolveTypes(EvaluationContext.Spec spec) {
+            return new VariableRef(this.name, spec.typeOf(this.name));
+        }
+
+        @Override
+        public VType type() {
+            return this.resolvedType == null ? VType.createTemplate() : this.resolvedType;
+        }
+
+        @Override
+        public VValue evaluate(EvaluationContext ctx) {
+            return ctx.getVariable(this.name, this.type());
+        }
+
+        @Override
+        public String toString(TypeNamer ctx) {
+            return "(variable %s : %s)".formatted(this.name, this.type().toString(ctx));
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || this.getClass() != o.getClass()) return false;
+            VariableRef that = (VariableRef) o;
+            return Objects.equals(this.name, that.name) && Objects.equals(this.resolvedType, that.resolvedType);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(this.name, this.resolvedType);
+        }
+    }
+
+    VExpression resolveTypes(EvaluationContext.Spec spec);
     VType type();
-    VValue evaluate();
+    VValue evaluate(EvaluationContext ctx);
     String toString(TypeNamer ctx);
 }
