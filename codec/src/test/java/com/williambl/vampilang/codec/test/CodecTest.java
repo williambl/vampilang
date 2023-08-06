@@ -236,6 +236,7 @@ public class CodecTest {
         private final Map<VType, Codec<?>> codecs = new HashMap<>();
         private final Map<VType, Function<VParameterisedType, Codec<?>>> parameterisedTypeCodecs = new HashMap<>();
         private final Map<String, VFunctionDefinition> functions = new HashMap<>();
+        private final Map<TypeAndSpecCacheKey, Codec<VExpression>> cachedVExpressionCodecs = new HashMap<>();
 
         @Override
         public Codec<?> rawCodecForType(VType type) {
@@ -279,8 +280,7 @@ public class CodecTest {
 
         @Override
         public Codec<VExpression> expressionCodecForType(VType type, EvaluationContext.Spec spec) {
-            return new VExpressionCodec(
-                    //TODO cache
+            return this.cachedVExpressionCodecs.computeIfAbsent(new TypeAndSpecCacheKey(type, spec), $ -> new VExpressionCodec(
                     new ValueCodec(type, this),
                     new KeyDispatchCodec<>( //TODO holy shit
                             "function",
@@ -295,7 +295,9 @@ public class CodecTest {
                                     ? DataResult.success(f)
                                     : DataResult.error(() -> "Unmatched type"),
                                     Function.identity()),
-                    VariableRefCodec.CODEC);
+                    VariableRefCodec.CODEC));
         }
+
+        private record TypeAndSpecCacheKey(VType type, EvaluationContext.Spec spec) {}
     }
 }

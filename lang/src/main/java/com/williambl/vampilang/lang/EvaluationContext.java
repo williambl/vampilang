@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Unmodifiable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Objects;
 
 public class EvaluationContext {
     private final @Unmodifiable Map<String, VValue> variables;
@@ -34,6 +35,19 @@ public class EvaluationContext {
         return new EvaluationContext(newVars);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || this.getClass() != o.getClass()) return false;
+        EvaluationContext that = (EvaluationContext) o;
+        return Objects.equals(this.variables, that.variables);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(this.variables);
+    }
+
     public static Builder builder(Spec spec) {
         return new Builder(spec);
     }
@@ -56,6 +70,19 @@ public class EvaluationContext {
             }
 
             return res;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || this.getClass() != o.getClass()) return false;
+            Spec spec = (Spec) o;
+            return Objects.equals(this.variableTypes, spec.variableTypes);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(this.variableTypes);
         }
     }
 
