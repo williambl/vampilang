@@ -7,10 +7,7 @@ import com.williambl.vampilang.lang.function.VFunctionSignature;
 
 import java.util.List;
 import java.util.Map;
-import java.util.function.BiFunction;
-import java.util.function.DoubleBinaryOperator;
-import java.util.function.DoubleUnaryOperator;
-import java.util.function.Function;
+import java.util.function.*;
 import java.util.stream.Stream;
 
 public final class LogicVFunctions {
@@ -18,7 +15,7 @@ public final class LogicVFunctions {
     public static final VFunctionDefinition OR = fromMultiOperator("or", bools -> bools.anyMatch(Boolean::booleanValue));
     public static final VFunctionDefinition NOT = fromUnaryOperator("not", bool -> !bool);
 
-    public static VFunctionDefinition fromBinaryOperator(String name, BiFunction<Boolean, Boolean, Boolean> operator) {
+    public static VFunctionDefinition fromBinaryOperator(String name, BinaryOperator<Boolean> operator) {
         return new VFunctionDefinition(
                 name,
                 new VFunctionSignature(Map.of("a", StandardVTypes.BOOLEAN, "b", StandardVTypes.BOOLEAN), StandardVTypes.BOOLEAN),
@@ -33,7 +30,7 @@ public final class LogicVFunctions {
                 (ctx, sig, args) -> new VValue(sig.outputType(), operator.apply(((List<Boolean>) args.get("operands").value()).stream())));
     }
 
-    public static VFunctionDefinition fromUnaryOperator(String name, Function<Boolean, Boolean> operator) {
+    public static VFunctionDefinition fromUnaryOperator(String name, UnaryOperator<Boolean> operator) {
         return new VFunctionDefinition(
                 name,
                 new VFunctionSignature(Map.of("operand", StandardVTypes.BOOLEAN), StandardVTypes.BOOLEAN),

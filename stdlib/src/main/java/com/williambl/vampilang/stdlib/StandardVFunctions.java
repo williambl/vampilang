@@ -25,7 +25,7 @@ public class StandardVFunctions {
     public static final VFunctionDefinition MATCH = new VFunctionDefinition("match",
             new VFunctionSignature(
                     Map.of("input", MATCH_ON_TYPE, "cases", StandardVTypes.LIST.with(0, StandardVTypes.MATCH_CASE.with(0, MATCH_ON_TYPE).with(1, MATCH_RESULT_TYPE)), "default", MATCH_RESULT_TYPE),
-                    StandardVTypes.TEMPLATE_ANY),
+                    MATCH_RESULT_TYPE),
             (ctx, sig, args) -> {
                 Object input = args.get("input").value();
                 List<Map.Entry<Object, Object>> cases = args.get("cases").getUnchecked();
