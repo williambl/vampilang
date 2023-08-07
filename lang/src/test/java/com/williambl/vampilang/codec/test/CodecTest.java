@@ -292,8 +292,8 @@ public class CodecTest {
 
             var res = codec.encodeStart(JsonOps.INSTANCE, program.resolveTypes(env, spec));
             Assertions.assertTrue(res.result().isPresent());
-            var resStr = res.result().get().toString();
-            Assertions.assertEquals("{\"function\":\"if-else\",\"value\":{\"predicate\":{\"var\":\"my_var\"},\"a\":{\"v-type\":\"my_special_type\",\"a\":3,\"b\":50},\"b\":{\"v-type\":\"my_special_type\",\"a\":200,\"b\":10}}}", resStr);
+            var resJson = res.result().get();
+            Assertions.assertEquals(JsonParser.parseString("{\"function\":\"if-else\",\"value\":{\"predicate\":{\"var\":\"my_var\"},\"a\":{\"v-type\":\"my_special_type\",\"a\":3,\"b\":50},\"b\":{\"v-type\":\"my_special_type\",\"a\":200,\"b\":10}}}"), resJson);
         }
     }
 
