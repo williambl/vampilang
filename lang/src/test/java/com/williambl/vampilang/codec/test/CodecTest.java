@@ -2,7 +2,6 @@ package com.williambl.vampilang.codec.test;
 
 import com.google.common.collect.Sets;
 import com.google.gson.JsonParser;
-import com.mojang.datafixers.util.Either;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
