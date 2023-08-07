@@ -7,6 +7,7 @@ import com.williambl.vampilang.lang.type.VParameterisedType;
 import com.williambl.vampilang.lang.type.VType;
 
 import java.util.*;
+import java.util.function.BiFunction;
 import java.util.function.Function;
 
 public interface VEnvironment {
@@ -20,4 +21,8 @@ public interface VEnvironment {
     Map<String, VType> allTypes();
     void registerFunction(VFunctionDefinition function);
     TypeNamer createTypeNamer();
+    default void registerType(String name, VType type, Codec<?> codec) {
+        this.registerType(name, type);
+        this.registerCodecForType(type, codec);
+    }
 }

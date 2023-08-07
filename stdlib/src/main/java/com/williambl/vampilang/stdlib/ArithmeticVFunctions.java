@@ -1,5 +1,6 @@
 package com.williambl.vampilang.stdlib;
 
+import com.williambl.vampilang.lang.VEnvironment;
 import com.williambl.vampilang.lang.VValue;
 import com.williambl.vampilang.lang.function.VFunctionDefinition;
 import com.williambl.vampilang.lang.function.VFunctionSignature;
@@ -60,5 +61,23 @@ public final class ArithmeticVFunctions {
                 name,
                 new VFunctionSignature(Map.of("operand", StandardVTypes.NUMBER), StandardVTypes.NUMBER),
                 (ctx, sig, args) -> new VValue(sig.outputType(), operator.applyAsDouble((Double) args.get("operand").value())));
+    }
+
+    public static void register(VEnvironment env) {
+        env.registerFunction(ADD);
+        env.registerFunction(SUBTRACT);
+        env.registerFunction(MULTIPLY);
+        env.registerFunction(DIVIDE);
+        env.registerFunction(MODULO);
+        env.registerFunction(POWER);
+        env.registerFunction(MAX);
+        env.registerFunction(MIN);
+        env.registerFunction(ABSOLUTE);
+        env.registerFunction(NEGATE);
+        env.registerFunction(SQUARE_ROOT);
+        env.registerFunction(SINE);
+        env.registerFunction(COSINE);
+        env.registerFunction(TANGENT);
+        env.registerFunction(POLYNOMIAL);
     }
 }

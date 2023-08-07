@@ -1,5 +1,6 @@
 package com.williambl.vampilang.stdlib;
 
+import com.williambl.vampilang.lang.VEnvironment;
 import com.williambl.vampilang.lang.VValue;
 import com.williambl.vampilang.lang.function.VFunctionDefinition;
 import com.williambl.vampilang.lang.function.VFunctionSignature;
@@ -37,5 +38,11 @@ public final class LogicVFunctions {
                 name,
                 new VFunctionSignature(Map.of("operand", StandardVTypes.BOOLEAN), StandardVTypes.BOOLEAN),
                 (ctx, sig, args) -> new VValue(sig.outputType(), operator.apply(args.get("operand").get(StandardVTypes.BOOLEAN))));
+    }
+
+    public static void register(VEnvironment env) {
+        env.registerFunction(AND);
+        env.registerFunction(OR);
+        env.registerFunction(NOT);
     }
 }

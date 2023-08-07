@@ -16,6 +16,7 @@ repositories {
 dependencies {
     implementation project(':lang')
 
+    implementation 'com.mojang:datafixerupper:6.0.6'
     implementation 'org.jetbrains:annotations:24.0.1'
     implementation 'com.google.guava:guava:31.1-jre'
     testImplementation platform('org.junit:junit-bom:5.9.1')

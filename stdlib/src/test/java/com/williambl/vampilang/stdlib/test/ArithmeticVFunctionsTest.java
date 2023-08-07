@@ -2,6 +2,8 @@ package com.williambl.vampilang.stdlib.test;
 
 import com.google.common.collect.Sets;
 import com.williambl.vampilang.lang.EvaluationContext;
+import com.williambl.vampilang.lang.VEnvironment;
+import com.williambl.vampilang.lang.VEnvironmentImpl;
 import com.williambl.vampilang.lang.VExpression;
 import com.williambl.vampilang.lang.function.VFunctionDefinition;
 import com.williambl.vampilang.stdlib.ArithmeticVFunctions;
@@ -91,7 +93,7 @@ public class ArithmeticVFunctionsTest {
         for (var coefficients : List.of(List.of(0.), List.of(1.), List.of(-5., 5., 2.), List.of(10., 30., 200.))) {
             var coefficientsExpr = VExpression.value(StandardVTypes.LIST.with(0, StandardVTypes.NUMBER), coefficients);
             for (var test : INPUTS) {
-                var expr = VExpression.functionApplication(ArithmeticVFunctions.POLYNOMIAL, Map.of("coefficients", coefficientsExpr, "input", VExpression.value(StandardVTypes.NUMBER, test)));
+                var expr = VExpression.functionApplication(ArithmeticVFunctions.POLYNOMIAL, Map.of("coefficients", coefficientsExpr, "input", VExpression.value(StandardVTypes.NUMBER, test))).resolveTypes(ENV, new EvaluationContext.Spec());
                 var res = expr.evaluate(new EvaluationContext());
                 double result = 0;
                 for (int i = 0; i < coefficients.size(); i++) {
@@ -104,10 +106,15 @@ public class ArithmeticVFunctionsTest {
     }
 
     private static final Set<Double> INPUTS = Set.of(-10., -200., 10., 5., 100., 200., 4.5, Double.NEGATIVE_INFINITY, (double) Float.MIN_VALUE);
+    private static final VEnvironment ENV = new VEnvironmentImpl();
+    static {
+        StandardVTypes.register(ENV);
+        ArithmeticVFunctions.register(ENV);
+    }
 
     private static void fromBinaryOperator(VFunctionDefinition function, List<BinaryOperatorTestCase> cases) {
         for (var test : cases) {
-            var expr = VExpression.functionApplication(function, Map.of("a", VExpression.value(StandardVTypes.NUMBER, test.a()), "b", VExpression.value(StandardVTypes.NUMBER, test.b())));
+            var expr = VExpression.functionApplication(function, Map.of("a", VExpression.value(StandardVTypes.NUMBER, test.a()), "b", VExpression.value(StandardVTypes.NUMBER, test.b()))).resolveTypes(ENV, new EvaluationContext.Spec());
             var res = expr.evaluate(new EvaluationContext());
             Assertions.assertEquals(StandardVTypes.NUMBER, res.type());
             Assertions.assertEquals(test.res(), res.value());
@@ -116,7 +123,7 @@ public class ArithmeticVFunctionsTest {
 
     private static void fromUnaryOperator(VFunctionDefinition function, List<UnaryOperatorTestCase> cases) {
         for (var test : cases) {
-            var expr = VExpression.functionApplication(function, Map.of("operand", VExpression.value(StandardVTypes.NUMBER, test.operand())));
+            var expr = VExpression.functionApplication(function, Map.of("operand", VExpression.value(StandardVTypes.NUMBER, test.operand()))).resolveTypes(ENV, new EvaluationContext.Spec());
             var res = expr.evaluate(new EvaluationContext());
             Assertions.assertEquals(StandardVTypes.NUMBER, res.type());
             Assertions.assertEquals(test.res(), res.value());
