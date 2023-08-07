@@ -66,15 +66,12 @@ public class VEnvironmentImpl implements VEnvironment {
     public Codec<VExpression> expressionCodecForType(VType type, EvaluationContext.Spec spec) {
         return this.cachedVExpressionCodecs.computeIfAbsent(new TypeAndSpecCacheKey(type, spec), $ -> new VExpressionCodec(
                 new ValueCodec(type, this),
-                new KeyDispatchCodec<>( //TODO holy shit
-                        "function",
-                        Codec.STRING,
-                        (VExpression.FunctionApplication f) -> DataResult.success(f.function().name()),
-                        k -> Optional.ofNullable(this.functions.get(k))
-                                .map(f -> new FunctionApplicationCodec(f, this, spec))
-                                .map(DataResult::success)
-                                .orElseGet(() -> DataResult.error(() -> "No function found")))
-                        .codec()
+                KeyDispatchCodec.<VFunctionDefinition, VExpression.FunctionApplication>unsafe("function", Codec.STRING.comapFlatMap(
+                                name -> Optional.ofNullable(this.functions.get(name)).map(DataResult::success).orElse(DataResult.error(() -> "No such function with name "+name)),
+                                VFunctionDefinition::name),
+                                expr -> DataResult.success(expr.function()),
+                                func -> DataResult.success(new FunctionApplicationCodec(func, this, spec)),
+                                func -> DataResult.success(new FunctionApplicationCodec(func.function(), this, spec))).codec()
                         .comapFlatMap(f -> type.contains(((VExpression.FunctionApplication) f.resolveTypes(this, spec)).resolvedSignature().outputType())
                                         ? DataResult.success(f)
                                         : DataResult.error(() -> "Unmatched type"),
