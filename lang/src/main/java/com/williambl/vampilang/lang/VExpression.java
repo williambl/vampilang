@@ -163,6 +163,14 @@ public sealed interface VExpression {
             if (!(resultType instanceof ConstructableVType<?> constructableVType)) {
                 throw new IllegalArgumentException("Type %s must be constructable to be used in an object literal expression".formatted(this.typeName));
             }
+            var expectedPropertyTypes = constructableVType.propertyTypes;
+            for (var key : expectedPropertyTypes.keySet()) {
+                var expected = expectedPropertyTypes.get(key);
+                var actual = resolvedProperties.get(key);
+                if (actual == null || !expected.contains(actual.type())) {
+                    throw new IllegalArgumentException("Argument %s should be of type %s!".formatted(key, expected));
+                }
+            }
             return new ObjectConstruction(this.typeName, resolvedProperties, constructableVType);
         }
 
@@ -181,7 +189,6 @@ public sealed interface VExpression {
                 throw new UnsupportedOperationException("Cannot evaluate unresolved expression!");
             }
 
-            //TODO is there a way we can check that all the properties exist and are correctly typed in advance?
             var propertiesValues = this.properties.entrySet().stream().collect(Collectors.toMap(
                     Map.Entry::getKey,
                     kv -> kv.getValue().evaluate(ctx)));
