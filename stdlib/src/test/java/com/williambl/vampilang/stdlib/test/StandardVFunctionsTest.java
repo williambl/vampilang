@@ -12,9 +12,11 @@ import org.junit.jupiter.api.Test;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
+import java.util.function.Supplier;
 import java.util.function.UnaryOperator;
 import java.util.stream.Stream;
 
@@ -55,10 +57,39 @@ public class StandardVFunctionsTest {
         }
     }
 
+    @Test
+    public void equalsTest() {
+        @SuppressWarnings("StringOperationCanBeSimplified") Set<Supplier<VValue>> values
+                = Set.of(() -> new VValue(StandardVTypes.NUMBER, 3.32442), () -> new VValue(StandardVTypes.STRING, new String("yay :3")));
+        var inputA = VExpression.variable("the_input_a");
+        var inputB = VExpression.variable("the_input_b");
+        var equalsExpr = VExpression.functionApplication(StandardVFunctions.EQUALS, Map.of(
+                "a", inputA,
+                "b", inputB
+        ));
+        var notEqualsExpr = VExpression.functionApplication(StandardVFunctions.NOT_EQUALS, Map.of(
+                "a", inputA,
+                "b", inputB
+        ));
+        for (var testCase : Sets.cartesianProduct(values, values)) {
+            var a = testCase.get(0).get();
+            var b = testCase.get(1).get();
+            var spec = new EvaluationContext.Spec(Map.of("the_input_a", a.type(), "the_input_b", b.type()));
+            var equalsRes = equalsExpr.resolveTypes(ENV, spec).evaluate(EvaluationContext.builder(spec).addVariable("the_input_a", a).addVariable("the_input_b", b).build());
+            var notEqualsRes = notEqualsExpr.resolveTypes(ENV, spec).evaluate(EvaluationContext.builder(spec).addVariable("the_input_a", a).addVariable("the_input_b", b).build());
+            var expected = Objects.equals(a, b);
+            Assertions.assertEquals(StandardVTypes.BOOLEAN, equalsRes.type());
+            Assertions.assertEquals(StandardVTypes.BOOLEAN, notEqualsRes.type());
+            Assertions.assertEquals(expected, equalsRes.value());
+            Assertions.assertEquals(!expected, notEqualsRes.value());
+        }
+    }
+
+    //TODO comparison tests
+
     private static final VEnvironment ENV = new VEnvironmentImpl();
     static {
         StandardVTypes.register(ENV);
         StandardVFunctions.register(ENV);
     }
-
 }
