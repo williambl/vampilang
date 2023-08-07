@@ -5,17 +5,18 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.DynamicOps;
 import com.williambl.vampilang.lang.VExpression;
-import com.williambl.vampilang.lang.type.VType;
 
 public class VExpressionCodec implements Codec<VExpression> {
     private final Codec<VExpression.Value> valueCodec;
     private final Codec<VExpression.FunctionApplication> functionApplicationCodec;
     private final Codec<VExpression.VariableRef> variableRefCodec;
+    private final Codec<VExpression.ObjectConstruction> objectConstructionCodec;
 
-    public VExpressionCodec(Codec<VExpression.Value> valueCodec, Codec<VExpression.FunctionApplication> functionApplicationCodec, Codec<VExpression.VariableRef> variableRefCodec) {
+    public VExpressionCodec(Codec<VExpression.Value> valueCodec, Codec<VExpression.FunctionApplication> functionApplicationCodec, Codec<VExpression.VariableRef> variableRefCodec, Codec<VExpression.ObjectConstruction> objectConstructionCodec) {
         this.valueCodec = valueCodec;
         this.functionApplicationCodec = functionApplicationCodec;
         this.variableRefCodec = variableRefCodec;
+        this.objectConstructionCodec = objectConstructionCodec;
     }
 
     @Override
@@ -28,6 +29,11 @@ public class VExpressionCodec implements Codec<VExpression> {
         var valueRead = this.valueCodec.decode(ops, input).map(p -> p.mapFirst(VExpression.class::cast));
         if (valueRead.result().isPresent()) {
             return valueRead;
+        }
+
+        var objectRead = this.objectConstructionCodec.decode(ops, input).map(p -> p.mapFirst(VExpression.class::cast));
+        if (objectRead.result().isPresent()) {
+            return objectRead;
         }
 
         var functionApplicationRead = this.functionApplicationCodec.decode(ops, input).map(p -> p.mapFirst(VExpression.class::cast));
@@ -49,6 +55,8 @@ public class VExpressionCodec implements Codec<VExpression> {
             return this.valueCodec.encode(valueInput, ops, prefix);
         } else if (input instanceof VExpression.VariableRef varRefInput) {
             return this.variableRefCodec.encode(varRefInput, ops, prefix);
+        } else if (input instanceof VExpression.ObjectConstruction objectInput) {
+            return this.objectConstructionCodec.encode(objectInput, ops, prefix);
         }
 
         throw new IncompatibleClassChangeError("Expected VExpression to be one of FunctionApplication, Value, or VariableRef!");

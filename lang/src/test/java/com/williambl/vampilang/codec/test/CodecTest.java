@@ -1,8 +1,10 @@
 package com.williambl.vampilang.codec.test;
 
+import com.google.common.reflect.TypeToken;
 import com.google.gson.JsonParser;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.JsonOps;
+import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.williambl.vampilang.codec.*;
 import com.williambl.vampilang.lang.*;
 import com.williambl.vampilang.lang.function.VFunctionDefinition;
@@ -222,4 +224,137 @@ public class CodecTest {
         }
     }
 
+    @Test
+    public void testSerialiseFunctionApplicationWithObjectConstruction() {
+        class MySpecialObject { // inline records when
+            private final int a;
+            private final int b;
+
+            MySpecialObject(int a, int b) {
+                this.a = a;
+                this.b = b;
+            }
+
+            public int a() {
+                return this.a;
+            }
+
+            public int b() {
+                return this.b;
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                if (this == o) return true;
+                if (o == null || this.getClass() != o.getClass()) return false;
+                MySpecialObject that = (MySpecialObject) o;
+                return this.a == that.a && this.b == that.b;
+            }
+
+            @Override
+            public int hashCode() {
+                return Objects.hash(this.a, this.b);
+            }
+        }
+        var typeA = VType.create();
+        var typeB = VType.create();
+        var boolType = VType.create();
+        var typeAOrB = VType.createTemplate(typeA, typeB);
+        var anyType = VType.createTemplate();
+        var mySpecialType = VType.create(TypeToken.of(MySpecialObject.class), Map.of("a", typeAOrB, "b", typeAOrB), map -> new MySpecialObject(map.get("a").<Number>getUnchecked().intValue(), map.get("b").<Number>getUnchecked().intValue()));
+        var env = new VEnvironmentImpl();
+        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> new VValue(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value()));
+        env.registerType("a", typeA);
+        env.registerCodecForType(typeA, Codec.INT);
+        env.registerType("b", typeB);
+        env.registerCodecForType(typeB, Codec.STRING);
+        env.registerType("bool", boolType);
+        env.registerCodecForType(boolType, Codec.BOOL);
+        env.registerType("my_special_type", mySpecialType);
+        env.registerType("any", anyType);
+        env.registerCodecForType(mySpecialType, RecordCodecBuilder.<MySpecialObject>create(instance -> instance.group(Codec.INT.fieldOf("a").forGetter(MySpecialObject::a), Codec.INT.fieldOf("b").forGetter(MySpecialObject::b)).apply(instance, MySpecialObject::new)));
+        env.registerFunction(ifElseFunction);
+        {
+            var spec = new EvaluationContext.Spec(Map.of("my_var", boolType));
+            var codec = env.expressionCodecForType(anyType, spec);
+            var program = VExpression.functionApplication(ifElseFunction, Map.of(
+                    "predicate", VExpression.variable("my_var"),
+                    "a", VExpression.object(
+                            env.createTypeNamer().name(mySpecialType),
+                            Map.of(
+                                    "a", VExpression.value(typeA, 3),
+                                    "b", VExpression.value(typeA, 50))),
+                    "b", VExpression.object(
+                            env.createTypeNamer().name(mySpecialType),
+                            Map.of(
+                                    "a", VExpression.value(typeA, 200),
+                                    "b", VExpression.value(typeA, 10)))));
+
+            var res = codec.encodeStart(JsonOps.INSTANCE, program.resolveTypes(env, spec));
+            Assertions.assertTrue(res.result().isPresent());
+            var resStr = res.result().get().toString();
+            Assertions.assertEquals("{\"function\":\"if-else\",\"value\":{\"predicate\":{\"var\":\"my_var\"},\"a\":{\"v-type\":\"my_special_type\",\"a\":3,\"b\":50},\"b\":{\"v-type\":\"my_special_type\",\"a\":200,\"b\":10}}}", resStr);
+        }
+    }
+
+    @Test
+    public void testDeserialiseFunctionApplicationWithObjectConstruction() {
+        class MySpecialObject { // inline records when
+            private final int a;
+            private final int b;
+
+            MySpecialObject(int a, int b) {
+                this.a = a;
+                this.b = b;
+            }
+
+            public int a() {
+                return this.a;
+            }
+
+            public int b() {
+                return this.b;
+            }
+
+            @Override
+            public boolean equals(Object o) {
+                if (this == o) return true;
+                if (o == null || this.getClass() != o.getClass()) return false;
+                MySpecialObject that = (MySpecialObject) o;
+                return this.a == that.a && this.b == that.b;
+            }
+
+            @Override
+            public int hashCode() {
+                return Objects.hash(this.a, this.b);
+            }
+        }
+        var typeA = VType.create();
+        var typeB = VType.create();
+        var boolType = VType.create();
+        var typeAOrB = VType.createTemplate(typeA, typeB);
+        var anyType = VType.createTemplate();
+        var mySpecialType = VType.create(TypeToken.of(MySpecialObject.class), Map.of("a", typeAOrB, "b", typeAOrB), map -> new MySpecialObject(map.get("a").<Number>getUnchecked().intValue(), map.get("b").<Number>getUnchecked().intValue()));
+        var env = new VEnvironmentImpl();
+        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> new VValue(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value()));
+        env.registerType("a", typeA);
+        env.registerCodecForType(typeA, Codec.INT);
+        env.registerType("b", typeB);
+        env.registerCodecForType(typeB, Codec.STRING);
+        env.registerType("bool", boolType);
+        env.registerCodecForType(boolType, Codec.BOOL);
+        env.registerType("my_special_type", mySpecialType);
+        env.registerType("any", anyType);
+        env.registerCodecForType(mySpecialType, RecordCodecBuilder.<MySpecialObject>create(instance -> instance.group(Codec.INT.fieldOf("a").forGetter(MySpecialObject::a), Codec.INT.fieldOf("b").forGetter(MySpecialObject::b)).apply(instance, MySpecialObject::new)));
+        env.registerFunction(ifElseFunction);
+        {
+            var spec = new EvaluationContext.Spec(Map.of("my_var", boolType));
+            var codec = env.expressionCodecForType(anyType, spec);
+            var programStr = "{\"function\":\"if-else\",\"value\":{\"predicate\":{\"var\":\"my_var\"},\"a\":{\"v-type\":\"my_special_type\",\"a\":3,\"b\":50},\"b\":{\"v-type\":\"my_special_type\",\"a\":200,\"b\":10}}}";
+            var res = codec.decode(JsonOps.INSTANCE, JsonParser.parseString(programStr));
+            Assertions.assertTrue(res.result().isPresent());
+            var resProg = res.result().get().getFirst();
+            Assertions.assertEquals(new MySpecialObject(3, 50), resProg.resolveTypes(env, spec).evaluate(EvaluationContext.builder(spec).addVariable("my_var", new VValue(boolType, true)).build()).value());
+        }
+    }
 }

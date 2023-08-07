@@ -1,14 +1,10 @@
 package com.williambl.vampilang.lang;
 
-import com.google.common.collect.BiMap;
 import com.google.common.collect.Sets;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.KeyDispatchCodec;
-import com.williambl.vampilang.codec.FunctionApplicationCodec;
-import com.williambl.vampilang.codec.VExpressionCodec;
-import com.williambl.vampilang.codec.ValueCodec;
-import com.williambl.vampilang.codec.VariableRefCodec;
+import com.williambl.vampilang.codec.*;
 import com.williambl.vampilang.lang.function.VFunctionDefinition;
 import com.williambl.vampilang.lang.type.SimpleVType;
 import com.williambl.vampilang.lang.type.VParameterisedType;
@@ -83,7 +79,8 @@ public class VEnvironmentImpl implements VEnvironment {
                                         ? DataResult.success(f)
                                         : DataResult.error(() -> "Unmatched type"),
                                 Function.identity()),
-                VariableRefCodec.CODEC));
+                VariableRefCodec.CODEC,
+                new ObjectConstructionCodec(this, spec).comapFlatMap(o -> type.contains(o.resolveTypes(this, spec).type()) ? DataResult.success(o) : DataResult.error(() -> "Unmatched type"), Function.identity())));
     }
 
     @Override

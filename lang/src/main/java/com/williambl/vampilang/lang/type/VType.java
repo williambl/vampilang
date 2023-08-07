@@ -26,8 +26,8 @@ public sealed interface VType permits SimpleVType, VParameterisedType, VTemplate
         return new TypedVType<>(typeToken);
     }
 
-    static <T> ConstructableVType<T> create(TypeToken<T> typeToken, Function<Map<String, VValue>, T> constructor) {
-        return new ConstructableVType<>(typeToken, constructor);
+    static <T> ConstructableVType<T> create(TypeToken<T> typeToken, Map<String, VType> propertyTypes, Function<Map<String, VValue>, T> constructor) {
+        return new ConstructableVType<>(typeToken, constructor, Map.copyOf(propertyTypes));
     }
 
     static SimpleVType create() {

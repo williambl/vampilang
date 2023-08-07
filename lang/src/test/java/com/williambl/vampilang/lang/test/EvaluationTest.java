@@ -164,7 +164,7 @@ public class EvaluationTest {
         var doubleType = VType.create();
         var numType = VType.createTemplate(intType, doubleType);
         var boolType = VType.create();
-        var mySpecialType = VType.create(TypeToken.of(MySpecialObject.class), map -> new MySpecialObject(map.get("a").<Number>getUnchecked().intValue(), map.get("b").<Number>getUnchecked().intValue()));
+        var mySpecialType = VType.create(TypeToken.of(MySpecialObject.class), Map.of("a", intType, "b", intType), map -> new MySpecialObject(map.get("a").<Number>getUnchecked().intValue(), map.get("b").<Number>getUnchecked().intValue()));
         var anyType = VType.createTemplate();
         var addFunction = new VFunctionDefinition("add", new VFunctionSignature(Map.of("a", numType, "b", numType), numType), (ctx, sig, a) -> new VValue(sig.outputType(), ((Number) a.get("a").value()).doubleValue() + ((Number) a.get("b").value()).doubleValue()));
         var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> new VValue(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value()));
