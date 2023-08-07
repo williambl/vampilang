@@ -16,6 +16,7 @@ public interface VEnvironment {
     void registerCodecForType(VType type, Codec<?> codec);
     void registerCodecForParameterisedType(SimpleVType bareType, Function<VParameterisedType, Codec<?>> codecForType);
     void registerType(String name, VType type);
+    VType getType(String typeName);
     Map<String, VType> allTypes();
     void registerFunction(VFunctionDefinition function);
     TypeNamer createTypeNamer();

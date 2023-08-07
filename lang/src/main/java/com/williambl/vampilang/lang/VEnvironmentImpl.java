@@ -92,6 +92,11 @@ public class VEnvironmentImpl implements VEnvironment {
     }
 
     @Override
+    public VType getType(String typeName) {
+        return this.types.get(typeName);
+    }
+
+    @Override
     public void registerCodecForType(VType type, Codec<?> codec) {
         this.codecs.put(type, codec);
     }

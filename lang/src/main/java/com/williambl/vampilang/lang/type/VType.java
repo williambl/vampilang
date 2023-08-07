@@ -2,10 +2,13 @@ package com.williambl.vampilang.lang.type;
 
 import com.google.common.reflect.TypeToken;
 import com.williambl.vampilang.lang.TypeNamer;
+import com.williambl.vampilang.lang.VValue;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 public sealed interface VType permits SimpleVType, VParameterisedType, VTemplateType {
@@ -21,6 +24,10 @@ public sealed interface VType permits SimpleVType, VParameterisedType, VTemplate
 
     static <T> TypedVType<T> create(TypeToken<T> typeToken) {
         return new TypedVType<>(typeToken);
+    }
+
+    static <T> ConstructableVType<T> create(TypeToken<T> typeToken, Function<Map<String, VValue>, T> constructor) {
+        return new ConstructableVType<>(typeToken, constructor);
     }
 
     static SimpleVType create() {

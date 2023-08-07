@@ -4,7 +4,7 @@ import com.google.common.reflect.TypeToken;
 
 import java.lang.reflect.Type;
 
-public final class TypedVType<T> extends SimpleVType {
+public sealed class TypedVType<T> extends SimpleVType permits ConstructableVType {
     public final TypeToken<T> type;
 
     TypedVType(TypeToken<T> type) {
