@@ -5,6 +5,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.DynamicOps;
 import com.williambl.vampilang.lang.EvaluationContext;
+import com.williambl.vampilang.lang.VEnvironment;
 import com.williambl.vampilang.lang.VExpression;
 import com.williambl.vampilang.lang.function.VFunctionDefinition;
 
@@ -13,10 +14,10 @@ import java.util.Map;
 
 public class FunctionApplicationCodec implements Codec<VExpression.FunctionApplication> {
     private final VFunctionDefinition functionDefinition;
-    private final VTypeCodecRegistry vTypeCodecs;
+    private final VEnvironment vTypeCodecs;
     private EvaluationContext.Spec spec;
 
-    public FunctionApplicationCodec(VFunctionDefinition functionDefinition, VTypeCodecRegistry vTypeCodecs, EvaluationContext.Spec spec) {
+    public FunctionApplicationCodec(VFunctionDefinition functionDefinition, VEnvironment vTypeCodecs, EvaluationContext.Spec spec) {
         this.functionDefinition = functionDefinition;
         this.vTypeCodecs = vTypeCodecs;
         this.spec = spec;

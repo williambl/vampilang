@@ -5,6 +5,7 @@ import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.DynamicOps;
 import com.mojang.serialization.Encoder;
+import com.williambl.vampilang.lang.VEnvironment;
 import com.williambl.vampilang.lang.VExpression;
 import com.williambl.vampilang.lang.type.VType;
 
@@ -12,9 +13,9 @@ import java.util.Map;
 
 public class ValueCodec implements Codec<VExpression.Value> {
     private final VType type;
-    private final VTypeCodecRegistry vTypeCodecs;
+    private final VEnvironment vTypeCodecs;
 
-    public ValueCodec(VType type, VTypeCodecRegistry vTypeCodecs) {
+    public ValueCodec(VType type, VEnvironment vTypeCodecs) {
         this.type = type;
         this.vTypeCodecs = vTypeCodecs;
     }

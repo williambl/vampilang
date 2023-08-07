@@ -24,8 +24,8 @@ public sealed interface VExpression {
     public record FunctionApplication(VFunctionDefinition function, @Nullable VFunctionSignature resolvedSignature, Map<String, VExpression> inputs) implements VExpression {
 
         @Override
-        public VExpression resolveTypes(EvaluationContext.Spec spec) {
-            var resolvedInputs = this.inputs.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, kv -> kv.getValue().resolveTypes(spec)));
+        public VExpression resolveTypes(VEnvironment env, EvaluationContext.Spec spec) {
+            var resolvedInputs = this.inputs.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, kv -> kv.getValue().resolveTypes(env, spec)));
             var resolvedFunctionSignature = this.function.signature().uniquise().resolveTypes(resolvedInputs.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, kv -> kv.getValue().type())));
             return new FunctionApplication(this.function, resolvedFunctionSignature, resolvedInputs);
         }
@@ -58,7 +58,7 @@ public sealed interface VExpression {
         @Override
         public VValue evaluate(EvaluationContext ctx) {
             if (this.resolvedSignature == null) {
-                return this.resolveTypes(new EvaluationContext.Spec()).evaluate(ctx);
+                throw new UnsupportedOperationException("Cannot evaluate unresolved expression!");
             }
 
             Map<String, VValue> evaluatedInputs = new HashMap<>();
@@ -81,7 +81,7 @@ public sealed interface VExpression {
     public record Value(VValue value) implements VExpression {
 
         @Override
-        public VExpression resolveTypes(EvaluationContext.Spec spec) {
+        public VExpression resolveTypes(VEnvironment env, EvaluationContext.Spec spec) {
             return this;
         }
         @Override
@@ -116,7 +116,7 @@ public sealed interface VExpression {
     public record VariableRef(String name, @Nullable VType resolvedType) implements VExpression {
 
         @Override
-        public VExpression resolveTypes(EvaluationContext.Spec spec) {
+        public VExpression resolveTypes(VEnvironment env, EvaluationContext.Spec spec) {
             return new VariableRef(this.name, spec.typeOf(this.name));
         }
 
@@ -149,7 +149,7 @@ public sealed interface VExpression {
         }
     }
 
-    VExpression resolveTypes(EvaluationContext.Spec spec);
+    VExpression resolveTypes(VEnvironment env, EvaluationContext.Spec spec);
     VType type();
     VValue evaluate(EvaluationContext ctx);
     String toString(TypeNamer ctx);

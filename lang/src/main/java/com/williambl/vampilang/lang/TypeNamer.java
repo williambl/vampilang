@@ -12,6 +12,11 @@ public class TypeNamer {
     public TypeNamer() {
     }
 
+    public TypeNamer(Map<VType, String> map) {
+        this();
+        this.typeNames.putAll(map);
+    }
+
     public TypeNamer(TypeNamer copyOf) {
         this();
         this.typeNames.putAll(copyOf.typeNames);
