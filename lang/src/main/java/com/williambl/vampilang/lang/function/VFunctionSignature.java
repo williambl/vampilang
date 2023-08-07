@@ -22,7 +22,7 @@ public record VFunctionSignature(Map<String, VType> inputTypes, VType outputType
     }
 
     public VFunctionSignature resolveTypes(Map<String, VType> actualInputs) {
-        var resolvedTemplates = new HashMap<VType, VType>();
+        var resolvedTemplates = new HashMap<VType, Set<VType>>();
         for (var key : this.inputTypes.keySet()) {
             var inputType = this.inputTypes.get(key);
             var actualInputType = actualInputs.get(key);
@@ -33,15 +33,47 @@ public record VFunctionSignature(Map<String, VType> inputTypes, VType outputType
             recursivelyResolveTypes(resolvedTemplates, inputType, actualInputType);
         }
 
+        var reducedResolvedTemplates = resolvedTemplates.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, kv -> {
+            var types = kv.getValue();
+            VType mostGeneral = null;
+            for (var type : types) {
+                if (mostGeneral == null) {
+                    mostGeneral = type;
+                    continue;
+                }
+
+                if (mostGeneral.contains(type)) {
+                    continue;
+                }
+
+                if (type.contains(mostGeneral)) {
+                    mostGeneral = type;
+                    continue;
+                }
+
+                throw new IllegalStateException("cannot reconcile %s and %s".formatted(type, mostGeneral));
+            }
+
+            if (mostGeneral == null) {
+                throw new IllegalStateException("no resolution found for %s".formatted(kv.getKey()));
+            }
+
+            return mostGeneral;
+        }));
+
         return new VFunctionSignature(
-                this.inputTypes.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, kv -> resolvedTemplates.getOrDefault(kv.getValue(), kv.getValue()))),
-                resolvedTemplates.getOrDefault(this.outputType, this.outputType)
+                this.inputTypes.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, kv -> reducedResolvedTemplates.getOrDefault(kv.getValue(), kv.getValue()))),
+                reducedResolvedTemplates.getOrDefault(this.outputType, this.outputType)
         );
     }
 
-    private static void recursivelyResolveTypes(Map<VType, VType> resolvedTemplates, VType input, VType actual) {
+    private static void recursivelyResolveTypes(Map<VType, Set<VType>> resolvedTemplates, VType input, VType actual) {
         if (!actual.contains(input)) { // if actual input type is more specific
-            resolvedTemplates.put(input, actual);
+            resolvedTemplates.compute(input, (i, s) -> {
+                var res = s == null ? new HashSet<VType>() : s;
+                res.add(actual);
+                return res;
+            });
             if (input instanceof VParameterisedType paramed) {
                 var actualParamed = (VParameterisedType) actual;
                 if (paramed.parameters.size() != actualParamed.parameters.size()) {
