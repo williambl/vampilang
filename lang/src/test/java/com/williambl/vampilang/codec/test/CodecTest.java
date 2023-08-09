@@ -357,4 +357,66 @@ public class CodecTest {
             Assertions.assertEquals(new MySpecialObject(3, 50), resProg.resolveTypes(env, spec).evaluate(EvaluationContext.builder(spec).addVariable("my_var", new VValue(boolType, true)).build()).value());
         }
     }
+
+    @Test
+    public void testDeserialiseFunctionApplicationWithListConstruction() {
+        var typeA = VType.create();
+        var typeB = VType.create();
+        var anyType = VType.createTemplate();
+        var listBareType = VType.create();
+        var listType = VType.createParameterised(listBareType, anyType);
+        var env = new VEnvironmentImpl();
+        var headFunction = new VFunctionDefinition("head", new VFunctionSignature(Map.of("list", listType, "fallback", anyType), anyType),
+                (ctx, sig, a) -> new VValue(sig.outputType(), (a.get("list").<List<VValue>>getUnchecked()).stream().map(VValue::value).findFirst().orElseGet(() -> a.get("fallback").value())));
+        env.registerType("a", typeA);
+        env.registerCodecForType(typeA, Codec.INT);
+        env.registerType("b", typeB);
+        env.registerCodecForType(typeB, Codec.STRING);
+        env.registerType("list", listBareType);
+        env.registerCodecForParameterisedType(listBareType, paramed -> env.rawCodecForType(paramed.parameters.get(0)));
+        env.registerType("any", anyType);
+        env.registerFunction(headFunction);
+        {
+            var spec = new EvaluationContext.Spec(Map.of("my_var", typeA));
+            var codec = env.expressionCodecForType(anyType, spec);
+            var programStr = "{\"function\":\"head\",\"list\": [{\"var\":\"my_var\"}, 2.0],\"fallback\":3.0}";
+            var res = codec.decode(JsonOps.INSTANCE, JsonParser.parseString(programStr));
+            Assertions.assertTrue(res.result().isPresent());
+            var resProg = res.result().get().getFirst();
+            Assertions.assertEquals(5.0, resProg.resolveTypes(env, spec).evaluate(EvaluationContext.builder(spec).addVariable("my_var", new VValue(typeA, 5.0)).build()).value());
+        }
+    }
+
+
+    @Test
+    public void testSerialiseFunctionApplicationWithListConstruction() {
+        var typeA = VType.create();
+        var typeB = VType.create();
+        var anyType = VType.createTemplate();
+        var listBareType = VType.create();
+        var listType = VType.createParameterised(listBareType, anyType);
+        var env = new VEnvironmentImpl();
+        var headFunction = new VFunctionDefinition("head", new VFunctionSignature(Map.of("list", listType, "fallback", anyType), anyType),
+                (ctx, sig, a) -> new VValue(sig.outputType(), (a.get("list").<List<VValue>>getUnchecked()).stream().map(VValue::value).findFirst().orElseGet(() -> a.get("fallback").value())));
+        env.registerType("a", typeA);
+        env.registerCodecForType(typeA, Codec.INT);
+        env.registerType("b", typeB);
+        env.registerCodecForType(typeB, Codec.STRING);
+        env.registerType("list", listBareType);
+        env.registerCodecForParameterisedType(listBareType, paramed -> env.rawCodecForType(paramed.parameters.get(0)));
+        env.registerType("any", anyType);
+        env.registerFunction(headFunction);
+        {
+            var spec = new EvaluationContext.Spec(Map.of("my_var", typeA));
+            var codec = env.expressionCodecForType(anyType, spec);
+            var program = VExpression.functionApplication(headFunction, Map.of(
+                    "list", VExpression.list(List.of(VExpression.variable("my_var"), VExpression.value(typeA, 2))),
+                    "fallback", VExpression.value(typeA, 3)));
+
+            var res = codec.encodeStart(JsonOps.INSTANCE, program.resolveTypes(env, spec));
+            Assertions.assertTrue(res.result().isPresent());
+            var resJson = res.result().get();
+            Assertions.assertEquals(JsonParser.parseString("{\"function\":\"head\",\"list\": [{\"var\":\"my_var\"}, 2],\"fallback\":3}"), resJson);
+        }
+    }
 }

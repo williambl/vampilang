@@ -3,6 +3,7 @@ package com.williambl.vampilang.lang;
 import com.williambl.vampilang.lang.function.VFunctionDefinition;
 import com.williambl.vampilang.lang.function.VFunctionSignature;
 import com.williambl.vampilang.lang.type.ConstructableVType;
+import com.williambl.vampilang.lang.type.VParameterisedType;
 import com.williambl.vampilang.lang.type.VType;
 import org.jetbrains.annotations.Nullable;
 
@@ -24,6 +25,10 @@ public sealed interface VExpression {
 
     static VExpression object(String typeName, Map<String, VExpression> properties) {
         return new ObjectConstruction(typeName, properties, null);
+    }
+
+    static VExpression list(List<VExpression> entries) {
+        return new ListConstruction(null, entries);
     }
 
     public record FunctionApplication(VFunctionDefinition function, @Nullable VFunctionSignature resolvedSignature, Map<String, VExpression> inputs) implements VExpression {
@@ -227,6 +232,56 @@ public sealed interface VExpression {
         @Override
         public int hashCode() {
             return Objects.hash(this.typeName, this.properties, this.resolvedType);
+        }
+    }
+
+    public record ListConstruction(@Nullable VParameterisedType resolvedType, List<VExpression> entries) implements VExpression {
+        @Override
+        public VExpression resolveTypes(VEnvironment env, EvaluationContext.Spec spec) {
+            var resolvedEntries = this.entries.stream().map(e -> e.resolveTypes(env, spec)).toList();
+            var listType = env.listType();
+            if (listType == null) {
+                throw new IllegalStateException("No list type in environment!");
+            }
+            var entryType = resolvedEntries.size() > 0 ? resolvedEntries.get(0).type() : null;
+            if (entryType != null) {
+                if (!resolvedEntries.stream().allMatch(e -> entryType.contains(e.type()))) { //TODO this is horrible, find the most general type of all of them instead
+                    throw new IllegalStateException("Not all entries match type of first entry!");
+                }
+
+                return new ListConstruction(listType.with(0, entryType), resolvedEntries);
+            }
+
+            return new ListConstruction(listType, resolvedEntries);
+        }
+
+        @Override
+        public VType type() {
+            if (this.resolvedType == null) {
+                throw new NoSuchElementException("Type not yet resolved");
+            }
+
+            return this.resolvedType;
+        }
+
+        @Override
+        public VValue evaluate(EvaluationContext ctx) {
+            var evaluatedEntries = this.entries.stream().map(e -> e.evaluate(ctx)).toList();
+            return new VValue(this.resolvedType(), evaluatedEntries);
+        }
+
+        @Override
+        public String toString(TypeNamer ctx) {
+            var builder = new StringBuilder();
+            builder.append("(list ");
+            for (var entry : this.entries) {
+                builder.append(entry.toString(ctx));
+                builder.append(" ");
+            }
+            builder.append(": ");
+            builder.append(this.resolvedType == null ? "?" : this.resolvedType.toString(ctx));
+            builder.append(")");
+            return builder.toString();
         }
     }
 

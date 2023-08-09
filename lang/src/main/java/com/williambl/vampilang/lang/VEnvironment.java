@@ -5,6 +5,7 @@ import com.williambl.vampilang.lang.function.VFunctionDefinition;
 import com.williambl.vampilang.lang.type.SimpleVType;
 import com.williambl.vampilang.lang.type.VParameterisedType;
 import com.williambl.vampilang.lang.type.VType;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 import java.util.function.BiFunction;
@@ -18,6 +19,7 @@ public interface VEnvironment {
     void registerCodecForParameterisedType(SimpleVType bareType, Function<VParameterisedType, Codec<?>> codecForType);
     void registerType(String name, VType type);
     VType getType(String typeName);
+    VParameterisedType listType();
     Map<String, VType> allTypes();
     void registerFunction(VFunctionDefinition function);
     TypeNamer createTypeNamer();

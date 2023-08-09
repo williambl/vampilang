@@ -77,7 +77,8 @@ public class VEnvironmentImpl implements VEnvironment {
                                         : DataResult.error(() -> "Unmatched type"),
                                 Function.identity()),
                 VariableRefCodec.CODEC,
-                new ObjectConstructionCodec(this, spec).comapFlatMap(o -> type.contains(o.resolveTypes(this, spec).type()) ? DataResult.success(o) : DataResult.error(() -> "Unmatched type"), Function.identity())));
+                new ObjectConstructionCodec(this, spec).comapFlatMap(o -> type.contains(o.resolveTypes(this, spec).type()) ? DataResult.success(o) : DataResult.error(() -> "Unmatched type"), Function.identity()),
+                new ListConstructionCodec(this, spec)));
     }
 
     @Override
@@ -88,6 +89,12 @@ public class VEnvironmentImpl implements VEnvironment {
     @Override
     public VType getType(String typeName) {
         return this.types.get(typeName);
+    }
+
+    @Override
+    public VParameterisedType listType() {
+        var type = this.getType("list");
+        return type == null ? null : VType.createParameterised(type, VType.createTemplate());
     }
 
     @Override
