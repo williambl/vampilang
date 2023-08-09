@@ -91,7 +91,7 @@ public class ArithmeticVFunctionsTest {
     @Test
     public void polynomialTest() {
         for (var coefficients : List.of(List.of(0.), List.of(1.), List.of(-5., 5., 2.), List.of(10., 30., 200.))) {
-            var coefficientsExpr = VExpression.value(StandardVTypes.LIST.with(0, StandardVTypes.NUMBER), coefficients);
+            var coefficientsExpr = VExpression.list(coefficients.stream().map(c -> VExpression.value(StandardVTypes.NUMBER, c)).toList());
             for (var test : INPUTS) {
                 var expr = VExpression.functionApplication(ArithmeticVFunctions.POLYNOMIAL, Map.of("coefficients", coefficientsExpr, "input", VExpression.value(StandardVTypes.NUMBER, test))).resolveTypes(ENV, new EvaluationContext.Spec()).result();
                 Assertions.assertTrue(expr.isPresent());

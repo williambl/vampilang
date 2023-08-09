@@ -11,6 +11,7 @@ import java.util.function.BiFunction;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.DoubleUnaryOperator;
 import java.util.function.Function;
+import java.util.stream.Collectors;
 
 public final class ArithmeticVFunctions {
 
@@ -39,7 +40,9 @@ public final class ArithmeticVFunctions {
             Map.of("coefficients", StandardVTypes.LIST.with(0, StandardVTypes.NUMBER), "input", StandardVTypes.NUMBER),
             StandardVTypes.NUMBER),
             (ctx, sig, args) -> {
-                List<Double> coefficients = args.get("coefficients").getUnchecked();
+                List<Double> coefficients = args.get("coefficients").<List<VValue>>getUnchecked().stream()
+                        .map(v -> v.get(StandardVTypes.NUMBER))
+                        .toList();
                 double input = args.get("input").get(StandardVTypes.NUMBER);
                 double result = 0;
                 for (int i = 0; i < coefficients.size(); i++) {
