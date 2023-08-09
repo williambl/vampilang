@@ -27,8 +27,9 @@ public class StandardVFunctionsTest {
             var predicateExpr = VExpression.value(StandardVTypes.BOOLEAN, value);
             var aExpr = VExpression.value(StandardVTypes.STRING, "a");
             var bExpr = VExpression.value(StandardVTypes.STRING, "b");
-            var expr = VExpression.functionApplication(StandardVFunctions.IF_ELSE, Map.of("predicate", predicateExpr, "a", aExpr, "b", bExpr)).resolveTypes(ENV, new EvaluationContext.Spec());
-            var res = expr.evaluate(new EvaluationContext());
+            var expr = VExpression.functionApplication(StandardVFunctions.IF_ELSE, Map.of("predicate", predicateExpr, "a", aExpr, "b", bExpr)).resolveTypes(ENV, new EvaluationContext.Spec()).result();
+            Assertions.assertTrue(expr.isPresent());
+            var res = expr.get().evaluate(new EvaluationContext());
             var expected = value ? "a" : "b";
             Assertions.assertEquals(StandardVTypes.STRING, res.type());
             Assertions.assertEquals(expected, res.value());
@@ -48,9 +49,10 @@ public class StandardVFunctionsTest {
                 "input", input,
                 "cases", cases,
                 "default", deefault
-        )).resolveTypes(ENV, spec);
+        )).resolveTypes(ENV, spec).result();
+        Assertions.assertTrue(expr.isPresent());
         for (var value : values) {
-            var res = expr.evaluate(EvaluationContext.builder(spec).addVariable("the_input", new VValue(StandardVTypes.NUMBER, value)).build());
+            var res = expr.get().evaluate(EvaluationContext.builder(spec).addVariable("the_input", new VValue(StandardVTypes.NUMBER, value)).build());
             var expected = Double.toString(value);
             Assertions.assertEquals(StandardVTypes.STRING, res.type());
             Assertions.assertEquals(expected, res.value());
@@ -75,13 +77,13 @@ public class StandardVFunctionsTest {
             var a = testCase.get(0).get();
             var b = testCase.get(1).get();
             var spec = new EvaluationContext.Spec(Map.of("the_input_a", a.type(), "the_input_b", b.type()));
-            var equalsRes = equalsExpr.resolveTypes(ENV, spec).evaluate(EvaluationContext.builder(spec).addVariable("the_input_a", a).addVariable("the_input_b", b).build());
-            var notEqualsRes = notEqualsExpr.resolveTypes(ENV, spec).evaluate(EvaluationContext.builder(spec).addVariable("the_input_a", a).addVariable("the_input_b", b).build());
+            var equalsRes = equalsExpr.resolveTypes(ENV, spec).map(e -> e.evaluate(EvaluationContext.builder(spec).addVariable("the_input_a", a).addVariable("the_input_b", b).build()));
+            var notEqualsRes = notEqualsExpr.resolveTypes(ENV, spec).map(e -> e.evaluate(EvaluationContext.builder(spec).addVariable("the_input_a", a).addVariable("the_input_b", b).build()));
             var expected = Objects.equals(a, b);
-            Assertions.assertEquals(StandardVTypes.BOOLEAN, equalsRes.type());
-            Assertions.assertEquals(StandardVTypes.BOOLEAN, notEqualsRes.type());
-            Assertions.assertEquals(expected, equalsRes.value());
-            Assertions.assertEquals(!expected, notEqualsRes.value());
+            Assertions.assertEquals(StandardVTypes.BOOLEAN, equalsRes.result().map(VValue::type).orElse(null));
+            Assertions.assertEquals(StandardVTypes.BOOLEAN, notEqualsRes.result().map(VValue::type).orElse(null));
+            Assertions.assertEquals(expected, equalsRes.result().map(VValue::value).orElse(null));
+            Assertions.assertEquals(!expected, notEqualsRes.result().map(VValue::value).orElse(null));
         }
     }
 

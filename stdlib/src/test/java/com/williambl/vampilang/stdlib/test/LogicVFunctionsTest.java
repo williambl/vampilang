@@ -51,8 +51,9 @@ public class LogicVFunctionsTest {
 
     private static void fromBinaryOperator(VFunctionDefinition function, List<BinaryOperatorTestCase> cases) {
         for (var test : cases) {
-            var expr = VExpression.functionApplication(function, Map.of("a", VExpression.value(StandardVTypes.BOOLEAN, test.a()), "b", VExpression.value(StandardVTypes.BOOLEAN, test.b()))).resolveTypes(ENV, new EvaluationContext.Spec());
-            var res = expr.evaluate(new EvaluationContext());
+            var expr = VExpression.functionApplication(function, Map.of("a", VExpression.value(StandardVTypes.BOOLEAN, test.a()), "b", VExpression.value(StandardVTypes.BOOLEAN, test.b()))).resolveTypes(ENV, new EvaluationContext.Spec()).result();
+            Assertions.assertTrue(expr.isPresent());
+            var res = expr.get().evaluate(new EvaluationContext());
             Assertions.assertEquals(StandardVTypes.BOOLEAN, res.type());
             Assertions.assertEquals(test.res(), res.value());
         }
@@ -60,8 +61,9 @@ public class LogicVFunctionsTest {
 
     private static void fromMultiOperator(VFunctionDefinition function, List<MultiOperatorTestCase> cases) {
         for (var test : cases) {
-            var expr = VExpression.functionApplication(function, Map.of("operands", VExpression.value(StandardVTypes.LIST.with(0, StandardVTypes.BOOLEAN), test.inputs()))).resolveTypes(ENV, new EvaluationContext.Spec());
-            var res = expr.evaluate(new EvaluationContext());
+            var expr = VExpression.functionApplication(function, Map.of("operands", VExpression.value(StandardVTypes.LIST.with(0, StandardVTypes.BOOLEAN), test.inputs()))).resolveTypes(ENV, new EvaluationContext.Spec()).result();
+            Assertions.assertTrue(expr.isPresent());
+            var res = expr.get().evaluate(new EvaluationContext());
             Assertions.assertEquals(StandardVTypes.BOOLEAN, res.type());
             Assertions.assertEquals(test.res(), res.value());
         }
@@ -69,8 +71,9 @@ public class LogicVFunctionsTest {
 
     private static void fromUnaryOperator(VFunctionDefinition function, List<UnaryOperatorTestCase> cases) {
         for (var test : cases) {
-            var expr = VExpression.functionApplication(function, Map.of("operand", VExpression.value(StandardVTypes.BOOLEAN, test.operand()))).resolveTypes(ENV, new EvaluationContext.Spec());
-            var res = expr.evaluate(new EvaluationContext());
+            var expr = VExpression.functionApplication(function, Map.of("operand", VExpression.value(StandardVTypes.BOOLEAN, test.operand()))).resolveTypes(ENV, new EvaluationContext.Spec()).result();
+            Assertions.assertTrue(expr.isPresent());
+            var res = expr.get().evaluate(new EvaluationContext());
             Assertions.assertEquals(StandardVTypes.BOOLEAN, res.type());
             Assertions.assertEquals(test.res(), res.value());
         }

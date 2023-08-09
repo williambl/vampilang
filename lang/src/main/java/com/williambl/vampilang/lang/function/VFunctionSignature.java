@@ -1,5 +1,6 @@
 package com.williambl.vampilang.lang.function;
 
+import com.mojang.serialization.DataResult;
 import com.williambl.vampilang.lang.TypeNamer;
 import com.williambl.vampilang.lang.type.VParameterisedType;
 import com.williambl.vampilang.lang.type.VType;
@@ -21,18 +22,19 @@ public record VFunctionSignature(Map<String, VType> inputTypes, VType outputType
                         .collect(Collectors.toMap(Map.Entry::getKey, kv -> uniquisedTemplates.get(kv.getValue()))), uniquisedTemplates.get(this.outputType));
     }
 
-    public VFunctionSignature resolveTypes(Map<String, VType> actualInputs) {
+    public DataResult<VFunctionSignature> resolveTypes(Map<String, VType> actualInputs) {
         var resolvedTemplates = new HashMap<VType, Set<VType>>();
         for (var key : this.inputTypes.keySet()) {
             var inputType = this.inputTypes.get(key);
             var actualInputType = actualInputs.get(key);
             if (!inputType.contains(actualInputType)) {
-                throw new IllegalStateException("cannot reconcile %s and %s".formatted(inputType, actualInputs));
+                return DataResult.error(() -> "cannot reconcile %s and %s".formatted(inputType, actualInputs));
             }
 
             recursivelyResolveTypes(resolvedTemplates, inputType, actualInputType);
         }
 
+        var errors = new ArrayList<String>();
         var reducedResolvedTemplates = resolvedTemplates.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, kv -> {
             var types = kv.getValue();
             VType mostGeneral = null;
@@ -51,20 +53,26 @@ public record VFunctionSignature(Map<String, VType> inputTypes, VType outputType
                     continue;
                 }
 
-                throw new IllegalStateException("cannot reconcile %s and %s".formatted(type, mostGeneral));
+                errors.add("cannot reconcile %s and %s".formatted(type, mostGeneral));
+                mostGeneral = null;
             }
 
             if (mostGeneral == null) {
-                throw new IllegalStateException("no resolution found for %s".formatted(kv.getKey()));
+                errors.add("no resolution found for %s".formatted(kv.getKey()));
+                mostGeneral = VType.create(); // dummy
             }
 
             return mostGeneral;
         }));
 
-        return new VFunctionSignature(
+        if (!errors.isEmpty()) {
+            return DataResult.error(() -> String.join("\n and ", errors));
+        }
+
+        return DataResult.success(new VFunctionSignature(
                 this.inputTypes.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, kv -> reducedResolvedTemplates.getOrDefault(kv.getValue(), kv.getValue()))),
                 reducedResolvedTemplates.getOrDefault(this.outputType, this.outputType)
-        );
+        ));
     }
 
     private static void recursivelyResolveTypes(Map<VType, Set<VType>> resolvedTemplates, VType input, VType actual) {

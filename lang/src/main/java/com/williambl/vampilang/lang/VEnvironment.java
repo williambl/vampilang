@@ -1,6 +1,7 @@
 package com.williambl.vampilang.lang;
 
 import com.mojang.serialization.Codec;
+import com.mojang.serialization.Decoder;
 import com.williambl.vampilang.lang.function.VFunctionDefinition;
 import com.williambl.vampilang.lang.type.SimpleVType;
 import com.williambl.vampilang.lang.type.VParameterisedType;
@@ -15,6 +16,7 @@ public interface VEnvironment {
     Codec<?> rawCodecForType(VType type);
     Map<VType, Codec<?>> codecsMatching(VType type);
     Codec<VExpression> expressionCodecForType(VType type, EvaluationContext.Spec spec);
+    Codec<List<VExpression>> expressionMultiCodecForType(VType type, EvaluationContext.Spec spec);
     void registerCodecForType(VType type, Codec<?> codec);
     void registerCodecForParameterisedType(SimpleVType bareType, Function<VParameterisedType, Codec<?>> codecForType);
     void registerType(String name, VType type);

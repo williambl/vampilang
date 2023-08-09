@@ -15,11 +15,12 @@ public class TypeInferenceTest {
         var templateType = VType.createTemplate();
         var identityFunctionSignature = new VFunctionSignature(Map.of("x", templateType), templateType);
         var concreteType = VType.create();
-        var resolvedFunctionSignature = identityFunctionSignature.resolveTypes(Map.of("x", concreteType));
-        Assertions.assertFalse(resolvedFunctionSignature.inputTypes().get("x") instanceof VTemplateType);
-        Assertions.assertFalse(resolvedFunctionSignature.outputType() instanceof VTemplateType);
-        Assertions.assertEquals(concreteType, resolvedFunctionSignature.inputTypes().get("x"));
-        Assertions.assertEquals(concreteType, resolvedFunctionSignature.outputType());
+        var resolvedFunctionSignature = identityFunctionSignature.resolveTypes(Map.of("x", concreteType)).result();
+        Assertions.assertTrue(resolvedFunctionSignature.isPresent());
+        Assertions.assertFalse(resolvedFunctionSignature.get().inputTypes().get("x") instanceof VTemplateType);
+        Assertions.assertFalse(resolvedFunctionSignature.get().outputType() instanceof VTemplateType);
+        Assertions.assertEquals(concreteType, resolvedFunctionSignature.get().inputTypes().get("x"));
+        Assertions.assertEquals(concreteType, resolvedFunctionSignature.get().outputType());
     }
 
     @Test
@@ -29,10 +30,11 @@ public class TypeInferenceTest {
         var concreteTypeA = VType.create();
         var concreteTypeB = VType.create();
         var aOrBType = VType.createTemplate(concreteTypeA, concreteTypeB);
-        var resolvedFunctionSignature = Assertions.assertDoesNotThrow(() -> functionSignature.resolveTypes(Map.of("a", concreteTypeA, "b", aOrBType)));
-        Assertions.assertEquals(aOrBType, resolvedFunctionSignature.inputTypes().get("a"));
-        Assertions.assertEquals(aOrBType, resolvedFunctionSignature.inputTypes().get("b"));
-        Assertions.assertEquals(aOrBType, resolvedFunctionSignature.outputType());
+        var resolvedFunctionSignature = functionSignature.resolveTypes(Map.of("a", concreteTypeA, "b", aOrBType)).result();
+        Assertions.assertTrue(resolvedFunctionSignature.isPresent());
+        Assertions.assertEquals(aOrBType, resolvedFunctionSignature.get().inputTypes().get("a"));
+        Assertions.assertEquals(aOrBType, resolvedFunctionSignature.get().inputTypes().get("b"));
+        Assertions.assertEquals(aOrBType, resolvedFunctionSignature.get().outputType());
     }
 
     @Test
@@ -41,7 +43,7 @@ public class TypeInferenceTest {
         var functionSignature = new VFunctionSignature(Map.of("a", templateType, "b", templateType), templateType);
         var concreteTypeA = VType.create();
         var concreteTypeB = VType.create();
-        Assertions.assertThrows(IllegalStateException.class, () -> functionSignature.resolveTypes(Map.of("a", concreteTypeA, "b", concreteTypeB)));
+        Assertions.assertFalse(functionSignature.resolveTypes(Map.of("a", concreteTypeA, "b", concreteTypeB)).result().isPresent());
     }
 
     @Test
@@ -56,8 +58,9 @@ public class TypeInferenceTest {
         var aType = VType.create();    // A
         ctx.addName(aType, "A");
         var aListType = listType.with(0, aType);    // List<A>
-        var resolvedFunctionSignature = Assertions.assertDoesNotThrow(() -> functionSignature.resolveTypes(Map.of("a", aListType)));
-        Assertions.assertEquals(aListType, resolvedFunctionSignature.inputTypes().get("a"));
-        Assertions.assertEquals(aType, resolvedFunctionSignature.outputType());
+        var resolvedFunctionSignature = functionSignature.resolveTypes(Map.of("a", aListType)).result();
+        Assertions.assertTrue(resolvedFunctionSignature.isPresent());
+        Assertions.assertEquals(aListType, resolvedFunctionSignature.get().inputTypes().get("a"));
+        Assertions.assertEquals(aType, resolvedFunctionSignature.get().outputType());
     }
 }

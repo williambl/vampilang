@@ -1,30 +1,35 @@
 package com.williambl.vampilang.codec;
 
+import com.google.common.collect.Sets;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
+import com.mojang.serialization.Decoder;
 import com.mojang.serialization.DynamicOps;
 import com.williambl.vampilang.lang.EvaluationContext;
 import com.williambl.vampilang.lang.VEnvironment;
 import com.williambl.vampilang.lang.VExpression;
-import com.williambl.vampilang.lang.function.VFunctionDefinition;
 import com.williambl.vampilang.lang.type.ConstructableVType;
+import com.williambl.vampilang.lang.type.VType;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
-public class ObjectConstructionCodec implements Codec<VExpression.ObjectConstruction> {
+public class ObjectConstructionDecoder implements Decoder<List<VExpression.ObjectConstruction>> {
     private final VEnvironment vTypeCodecs;
     private final EvaluationContext.Spec spec;
 
-    public ObjectConstructionCodec(VEnvironment vTypeCodecs, EvaluationContext.Spec spec) {
+    public ObjectConstructionDecoder(VEnvironment vTypeCodecs, EvaluationContext.Spec spec) {
         this.vTypeCodecs = vTypeCodecs;
         this.spec = spec;
     }
 
     @Override
-    public <T> DataResult<Pair<VExpression.ObjectConstruction, T>> decode(DynamicOps<T> ops, T input) {
-        var properties = new HashMap<String, VExpression>();
+    public <T> DataResult<Pair<List<VExpression.ObjectConstruction>, T>> decode(DynamicOps<T> ops, T input) {
+        var properties = new HashMap<String, List<VExpression>>();
         var typeName = ops.get(input, "v-type").flatMap(t -> Codec.STRING.decode(ops, t).map(Pair::getFirst)).result();
         if (typeName.isEmpty()) {
             return DataResult.error(() -> "No type supplied (key 'v-type')");
@@ -48,24 +53,23 @@ public class ObjectConstructionCodec implements Codec<VExpression.ObjectConstruc
                 return DataResult.error(() -> "Error decoding property %s: %s".formatted(property.getKey(), error.get().message()));
             }
 
-            properties.put(property.getKey(), decodedInput.getOrThrow(false, $ -> {}).getFirst());
+            properties.computeIfAbsent(property.getKey(), $ -> new ArrayList<>()).add(decodedInput.getOrThrow(false, $ -> {}).getFirst());
         }
 
-        return DataResult.success(Pair.of((VExpression.ObjectConstruction) VExpression.object(typeName.get(), Map.copyOf(properties)), input));
+        var res = Sets.cartesianProduct(
+                        properties.entrySet()
+                                .stream()
+                                .map(kv -> kv.getValue().stream().map(v -> Map.entry(kv.getKey(), v)).collect(Collectors.toSet()))
+                                .toList()).stream()
+                .map(entries -> (VExpression.ObjectConstruction) VExpression.object(typeName.get(), Map.ofEntries(entries.toArray(new Map.Entry[0]))))
+                .toList();
+
+        return DataResult.success(Pair.of(res, input));
     }
 
-    @Override
-    public <T> DataResult<T> encode(VExpression.ObjectConstruction input, DynamicOps<T> ops, T prefix) {
-        prefix = ops.set(prefix, "v-type", ops.createString(input.typeName()));
-        for (var property : input.properties().entrySet()) {
-            var encodedInput = this.vTypeCodecs.expressionCodecForType(property.getValue().type(), this.spec).encodeStart(ops, property.getValue()).result();
-            if (encodedInput.isEmpty()) {
-                return DataResult.error(() -> "Could not encode property: " + property.getKey());
-            }
-
-            prefix = ops.set(prefix, property.getKey(), encodedInput.get());
-        }
-
-        return DataResult.success(prefix);
+    public static Codec<List<VExpression.ObjectConstruction>> createCodec(VEnvironment vTypeCodecs, EvaluationContext.Spec spec) {
+        return Codec.of(
+                new ObjectConstructionEncoder(vTypeCodecs, spec).flatComap(l -> l.stream().findFirst().map(DataResult::success).orElse(DataResult.error(() -> "No entry in list!"))),
+                new ObjectConstructionDecoder(vTypeCodecs, spec));
     }
 }

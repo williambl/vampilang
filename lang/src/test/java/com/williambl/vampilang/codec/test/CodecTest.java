@@ -24,11 +24,11 @@ public class CodecTest {
         var codecRegistry = new VEnvironmentImpl();
         codecRegistry.registerCodecForType(typeA, Codec.INT);
         codecRegistry.registerCodecForType(typeB, Codec.STRING);
-        var aOrBValueCodec = new ValueCodec(typeAOrB, codecRegistry);
+        var aOrBValueCodec = new ValueDecoder(typeAOrB, codecRegistry);
         var res = aOrBValueCodec.decode(JsonOps.INSTANCE, JsonParser.parseString("3"));
         Assertions.assertTrue(res.result().isPresent());
         var resExpr = res.result().get().getFirst();
-        Assertions.assertEquals(3, resExpr.evaluate(new EvaluationContext()).value());
+        Assertions.assertEquals(3, resExpr.get(0).evaluate(new EvaluationContext()).value());
     }
 
     @Test
@@ -48,14 +48,18 @@ public class CodecTest {
             var res = codec.decode(JsonOps.INSTANCE, JsonParser.parseString("{\"function\": \"if-else\", \"predicate\": true, \"a\": 3, \"b\": 5}"));
             Assertions.assertTrue(res.result().isPresent());
             var resExpr = res.result().get().getFirst();
-            Assertions.assertEquals(3, resExpr.resolveTypes(codecRegistry, new EvaluationContext.Spec()).evaluate(new EvaluationContext()).value());
+            var resolvedExpr = resExpr.resolveTypes(codecRegistry, new EvaluationContext.Spec());
+            Assertions.assertTrue(resolvedExpr.result().isPresent());
+            Assertions.assertEquals(3, resolvedExpr.result().get().evaluate(new EvaluationContext()).value());
         }
         {
             var codec = codecRegistry.expressionCodecForType(typeB, new EvaluationContext.Spec());
             var res = codec.decode(JsonOps.INSTANCE, JsonParser.parseString("{\"function\": \"if-else\", \"predicate\": false, \"a\": \"aaa\", \"b\": \"bbb\"}"));
             Assertions.assertTrue(res.result().isPresent());
             var resExpr = res.result().get().getFirst();
-            Assertions.assertEquals("bbb", resExpr.resolveTypes(codecRegistry, new EvaluationContext.Spec()).evaluate(new EvaluationContext()).value());
+            var resolvedExpr = resExpr.resolveTypes(codecRegistry, new EvaluationContext.Spec());
+            Assertions.assertTrue(resolvedExpr.result().isPresent());
+            Assertions.assertEquals("bbb", resolvedExpr.result().get().evaluate(new EvaluationContext()).value());
         }
     }
 
@@ -71,11 +75,11 @@ public class CodecTest {
         codecRegistry.registerCodecForType(typeA, Codec.INT);
         codecRegistry.registerCodecForType(typeB, Codec.STRING);
         codecRegistry.registerCodecForType(aListType, Codec.INT.listOf());
-        var listValueCodec = new ValueCodec(listType, codecRegistry);
+        var listValueCodec = new ValueDecoder(listType, codecRegistry);
         var res = listValueCodec.decode(JsonOps.INSTANCE, JsonParser.parseString("[3, 4, 5]"));
         Assertions.assertTrue(res.result().isPresent());
         var resExpr = res.result().get().getFirst();
-        Assertions.assertEquals(List.of(3, 4, 5), resExpr.evaluate(new EvaluationContext()).value());
+        Assertions.assertEquals(List.of(3, 4, 5), resExpr.get(0).evaluate(new EvaluationContext()).value());
     }
 
     @Test
@@ -89,18 +93,18 @@ public class CodecTest {
         codecRegistry.registerCodecForType(typeA, Codec.INT);
         codecRegistry.registerCodecForType(typeB, Codec.STRING);
         codecRegistry.registerCodecForParameterisedType(bareListType, t -> codecRegistry.rawCodecForType(t.parameters.get(0)).listOf());
-        var listValueCodec = new ValueCodec(listType, codecRegistry);
+        var listValueCodec = new ValueDecoder(listType, codecRegistry);
         {
             var res = listValueCodec.decode(JsonOps.INSTANCE, JsonParser.parseString("[3, 4, 5]"));
             Assertions.assertTrue(res.result().isPresent());
             var resExpr = res.result().get().getFirst();
-            Assertions.assertEquals(List.of(3, 4, 5), resExpr.evaluate(new EvaluationContext()).value());
+            Assertions.assertEquals(List.of(3, 4, 5), resExpr.get(0).evaluate(new EvaluationContext()).value());
         }
         {
             var res = listValueCodec.decode(JsonOps.INSTANCE, JsonParser.parseString("[\"hi\", \"test\"]"));
             Assertions.assertTrue(res.result().isPresent());
             var resExpr = res.result().get().getFirst();
-            Assertions.assertEquals(List.of("hi", "test"), resExpr.evaluate(new EvaluationContext()).value());
+            Assertions.assertEquals(List.of("hi", "test"), resExpr.get(0).evaluate(new EvaluationContext()).value());
         }
     }
 
@@ -220,7 +224,9 @@ public class CodecTest {
             var res = codec.decode(JsonOps.INSTANCE, JsonParser.parseString("{\"function\": \"if-else\", \"predicate\": {\"var\": \"my_var\"}, \"a\": 3, \"b\": 5}"));
             Assertions.assertTrue(res.result().isPresent());
             var resExpr = res.result().get().getFirst();
-            Assertions.assertEquals(3, resExpr.resolveTypes(codecRegistry, spec).evaluate(EvaluationContext.builder(spec).addVariable("my_var", new VValue(boolType, true)).build()).value());
+            var resolvedExpr = resExpr.resolveTypes(codecRegistry, spec);
+            Assertions.assertTrue(resolvedExpr.result().isPresent());
+            Assertions.assertEquals(3, resolvedExpr.result().get().evaluate(EvaluationContext.builder(spec).addVariable("my_var", new VValue(boolType, true)).build()).value());
         }
     }
 
@@ -288,9 +294,10 @@ public class CodecTest {
                             env.createTypeNamer().name(mySpecialType),
                             Map.of(
                                     "a", VExpression.value(typeA, 200),
-                                    "b", VExpression.value(typeA, 10)))));
-
-            var res = codec.encodeStart(JsonOps.INSTANCE, program.resolveTypes(env, spec));
+                                    "b", VExpression.value(typeA, 10)))))
+                    .resolveTypes(env, spec);
+            Assertions.assertTrue(program.result().isPresent());
+            var res = codec.encodeStart(JsonOps.INSTANCE, program.result().get());
             Assertions.assertTrue(res.result().isPresent());
             var resJson = res.result().get();
             Assertions.assertEquals(JsonParser.parseString("{\"function\":\"if-else\",\"predicate\":{\"var\":\"my_var\"},\"a\":{\"v-type\":\"my_special_type\",\"a\":3,\"b\":50},\"b\":{\"v-type\":\"my_special_type\",\"a\":200,\"b\":10}}"), resJson);
@@ -354,7 +361,9 @@ public class CodecTest {
             var res = codec.decode(JsonOps.INSTANCE, JsonParser.parseString(programStr));
             Assertions.assertTrue(res.result().isPresent());
             var resProg = res.result().get().getFirst();
-            Assertions.assertEquals(new MySpecialObject(3, 50), resProg.resolveTypes(env, spec).evaluate(EvaluationContext.builder(spec).addVariable("my_var", new VValue(boolType, true)).build()).value());
+            var resolvedExpr = resProg.resolveTypes(env, spec);
+            Assertions.assertTrue(resolvedExpr.result().isPresent());
+            Assertions.assertEquals(new MySpecialObject(3, 50), resolvedExpr.result().get().evaluate(EvaluationContext.builder(spec).addVariable("my_var", new VValue(boolType, true)).build()).value());
         }
     }
 
@@ -383,7 +392,9 @@ public class CodecTest {
             var res = codec.decode(JsonOps.INSTANCE, JsonParser.parseString(programStr));
             Assertions.assertTrue(res.result().isPresent());
             var resProg = res.result().get().getFirst();
-            Assertions.assertEquals(5.0, resProg.resolveTypes(env, spec).evaluate(EvaluationContext.builder(spec).addVariable("my_var", new VValue(typeA, 5.0)).build()).value());
+            var resolvedExpr = resProg.resolveTypes(env, spec);
+            Assertions.assertTrue(resolvedExpr.result().isPresent());
+            Assertions.assertEquals(5.0, resolvedExpr.result().get().evaluate(EvaluationContext.builder(spec).addVariable("my_var", new VValue(typeA, 5.0)).build()).value());
         }
     }
 
@@ -411,12 +422,44 @@ public class CodecTest {
             var codec = env.expressionCodecForType(anyType, spec);
             var program = VExpression.functionApplication(headFunction, Map.of(
                     "list", VExpression.list(List.of(VExpression.variable("my_var"), VExpression.value(typeA, 2))),
-                    "fallback", VExpression.value(typeA, 3)));
+                    "fallback", VExpression.value(typeA, 3)))
+                    .resolveTypes(env, spec);
 
-            var res = codec.encodeStart(JsonOps.INSTANCE, program.resolveTypes(env, spec));
+            Assertions.assertTrue(program.result().isPresent());
+            var res = codec.encodeStart(JsonOps.INSTANCE, program.result().get());
             Assertions.assertTrue(res.result().isPresent());
             var resJson = res.result().get();
             Assertions.assertEquals(JsonParser.parseString("{\"function\":\"head\",\"list\": [{\"var\":\"my_var\"}, 2],\"fallback\":3}"), resJson);
+        }
+    }
+
+    @Test
+    public void testDeserialiseFunctionApplicationWithAmbiguousType() {
+        var intType = VType.create();
+        var boolType = VType.create();
+        var anyType = VType.createTemplate(intType, boolType);
+        var codecRegistry = new VEnvironmentImpl();
+        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> new VValue(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value()));
+        codecRegistry.registerCodecForType(intType, Codec.INT);
+        codecRegistry.registerCodecForType(boolType, Codec.BOOL);
+        codecRegistry.registerFunction(ifElseFunction);
+        {
+            var codec = codecRegistry.expressionCodecForType(intType, new EvaluationContext.Spec());
+            var res = codec.decode(JsonOps.INSTANCE, JsonParser.parseString("{\"function\": \"if-else\", \"predicate\": true, \"a\": 3, \"b\": 5}"));
+            Assertions.assertTrue(res.result().isPresent());
+            var resExpr = res.result().get().getFirst();
+            var resolvedExpr = resExpr.resolveTypes(codecRegistry, new EvaluationContext.Spec());
+            Assertions.assertTrue(resolvedExpr.result().isPresent());
+            Assertions.assertEquals(3, resolvedExpr.result().get().evaluate(new EvaluationContext()).value());
+        }
+        {
+            var codec = codecRegistry.expressionCodecForType(boolType, new EvaluationContext.Spec());
+            var res = codec.decode(JsonOps.INSTANCE, JsonParser.parseString("{\"function\": \"if-else\", \"predicate\": true, \"a\": 3, \"b\": 5}"));
+            Assertions.assertTrue(res.result().isPresent());
+            var resExpr = res.result().get().getFirst();
+            var resolvedExpr = resExpr.resolveTypes(codecRegistry, new EvaluationContext.Spec());
+            Assertions.assertTrue(resolvedExpr.result().isPresent());
+            Assertions.assertEquals(true, resolvedExpr.result().get().evaluate(new EvaluationContext()).value());
         }
     }
 }

@@ -64,12 +64,16 @@ public class EvaluationContext {
         }
 
         public VType typeOf(String variableName) {
-            var res = this.variableTypes.get(variableName);
+            var res = this.nullableTypeOf(variableName);
             if (res == null) {
                 throw new NoSuchElementException("No variable with name "+variableName);
             }
 
             return res;
+        }
+
+        public @Nullable VType nullableTypeOf(String variableName) {
+            return this.variableTypes.get(variableName);
         }
 
         @Override

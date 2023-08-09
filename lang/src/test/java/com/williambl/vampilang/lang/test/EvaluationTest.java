@@ -37,8 +37,9 @@ public class EvaluationTest {
                         "a", VExpression.value(intType, 5),
                         "b", VExpression.value(intType, 10))),
                 "b", VExpression.value(intType, 25)));
-        var resolved = Assertions.assertDoesNotThrow(() -> program.resolveTypes(env, new EvaluationContext.Spec()));
-        var result = Assertions.assertDoesNotThrow(() -> resolved.evaluate(new EvaluationContext()));
+        var resolved = program.resolveTypes(env, new EvaluationContext.Spec()).result();
+        Assertions.assertTrue(resolved.isPresent());
+        var result = Assertions.assertDoesNotThrow(() -> resolved.get().evaluate(new EvaluationContext()));
         Assertions.assertEquals(intType, result.type());
         Assertions.assertEquals(15, ((Number) result.value()).intValue());
     }
@@ -69,8 +70,9 @@ public class EvaluationTest {
                         "a", VExpression.value(intType, 5),
                         "b", VExpression.value(intType, 10))),
                 "b", VExpression.value(intType, 25)));
-        var resolved = Assertions.assertDoesNotThrow(() -> program.resolveTypes(env, new EvaluationContext.Spec()));
-        var result = Assertions.assertDoesNotThrow(() -> resolved.evaluate(new EvaluationContext()));
+        var resolved = program.resolveTypes(env, new EvaluationContext.Spec()).result();
+        Assertions.assertTrue(resolved.isPresent());
+        var result = Assertions.assertDoesNotThrow(() -> resolved.get().evaluate(new EvaluationContext()));
         Assertions.assertEquals(intType, result.type());
         Assertions.assertEquals(15, ((Number) result.value()).intValue());
     }
@@ -101,9 +103,10 @@ public class EvaluationTest {
                         "a", VExpression.value(intType, 5),
                         "b", VExpression.value(intType, 10))),
                 "b", VExpression.value(intType, 25)));
-        var resolved = Assertions.assertDoesNotThrow(() -> program.resolveTypes(env, new EvaluationContext.Spec()));
+        var resolved = program.resolveTypes(env, new EvaluationContext.Spec()).result();
+        Assertions.assertTrue(resolved.isPresent());
         Assertions.assertEquals("(function if-else a = (function add a = (value 5 : int) b = (value 10 : int) : a : type1[double|int], b : type1[double|int] -> type1[double|int]) b = (value 25 : int) predicate = (function if-else a = (value true : bool) b = (value false : bool) predicate = (value true : bool) : a : type2, b : type2, predicate : bool -> type2) : a : type3, b : type3, predicate : bool -> type3)", program.toString(env.createTypeNamer()));
-        Assertions.assertEquals("(function if-else a = (function add a = (value 5 : int) b = (value 10 : int) : a : int, b : int -> int) b = (value 25 : int) predicate = (function if-else a = (value true : bool) b = (value false : bool) predicate = (value true : bool) : a : bool, b : bool, predicate : bool -> bool) : a : int, b : int, predicate : bool -> int)", resolved.toString(env.createTypeNamer()));
+        Assertions.assertEquals("(function if-else a = (function add a = (value 5 : int) b = (value 10 : int) : a : int, b : int -> int) b = (value 25 : int) predicate = (function if-else a = (value true : bool) b = (value false : bool) predicate = (value true : bool) : a : bool, b : bool, predicate : bool -> bool) : a : int, b : int, predicate : bool -> int)", resolved.get().toString(env.createTypeNamer()));
     }
 
     @Test
@@ -130,8 +133,9 @@ public class EvaluationTest {
                         "a", VExpression.variable("var1"),
                         "b", VExpression.variable("var2"))),
                 "b", VExpression.variable("var1")));
-        var resolved = Assertions.assertDoesNotThrow(() -> program.resolveTypes(env, evaluationSpec));
-        var result = Assertions.assertDoesNotThrow(() -> resolved.evaluate(EvaluationContext.builder(evaluationSpec).addVariable("var1", new VValue(intType, 5)).addVariable("var2", new VValue(intType, 10)).build()));
+        var resolved = program.resolveTypes(env, evaluationSpec).result();
+        Assertions.assertTrue(resolved.isPresent());
+        var result = Assertions.assertDoesNotThrow(() -> resolved.get().evaluate(EvaluationContext.builder(evaluationSpec).addVariable("var1", new VValue(intType, 5)).addVariable("var2", new VValue(intType, 10)).build()));
         Assertions.assertEquals(intType, result.type());
         Assertions.assertEquals(15, ((Number) result.value()).intValue());
     }
@@ -192,8 +196,9 @@ public class EvaluationTest {
                         Map.of(
                                 "a", VExpression.variable("var2"),
                                 "b", VExpression.variable("var1")))));
-        var resolved = Assertions.assertDoesNotThrow(() -> program.resolveTypes(env, evaluationSpec));
-        var result = Assertions.assertDoesNotThrow(() -> resolved.evaluate(EvaluationContext.builder(evaluationSpec).addVariable("var1", new VValue(intType, 5)).addVariable("var2", new VValue(intType, 10)).build()));
+        var resolved = program.resolveTypes(env, evaluationSpec).result();
+        Assertions.assertTrue(resolved.isPresent());
+        var result = Assertions.assertDoesNotThrow(() -> resolved.get().evaluate(EvaluationContext.builder(evaluationSpec).addVariable("var1", new VValue(intType, 5)).addVariable("var2", new VValue(intType, 10)).build()));
         Assertions.assertEquals(mySpecialType, result.type());
         Assertions.assertEquals(new MySpecialObject(5 + 10, 5), result.value());
     }

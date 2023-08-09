@@ -14,6 +14,7 @@ import com.williambl.vampilang.lang.type.VType;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class VEnvironmentImpl implements VEnvironment {
     private final Map<String, VType> types = new HashMap<>();
@@ -21,6 +22,7 @@ public class VEnvironmentImpl implements VEnvironment {
     private final Map<VType, Function<VParameterisedType, Codec<?>>> parameterisedTypeCodecs = new HashMap<>();
     private final Map<String, VFunctionDefinition> functions = new HashMap<>();
     private final Map<TypeAndSpecCacheKey, Codec<VExpression>> cachedVExpressionCodecs = new HashMap<>();
+    private final Map<TypeAndSpecCacheKey, Codec<List<VExpression>>> cachedVExpressionMultiCodecs = new HashMap<>();
 
     @Override
     public Codec<?> rawCodecForType(VType type) {
@@ -64,21 +66,60 @@ public class VEnvironmentImpl implements VEnvironment {
 
     @Override
     public Codec<VExpression> expressionCodecForType(VType type, EvaluationContext.Spec spec) {
-        return this.cachedVExpressionCodecs.computeIfAbsent(new TypeAndSpecCacheKey(type, spec), $ -> new VExpressionCodec(
-                new ValueCodec(type, this),
-                KeyDispatchCodec.<VFunctionDefinition, VExpression.FunctionApplication>unsafe("function", Codec.STRING.comapFlatMap(
-                                name -> Optional.ofNullable(this.functions.get(name)).map(DataResult::success).orElse(DataResult.error(() -> "No such function with name "+name)),
-                                VFunctionDefinition::name),
-                                expr -> DataResult.success(expr.function()),
-                                func -> DataResult.success(new FunctionApplicationCodec(func, this, spec)),
-                                func -> DataResult.success(new FunctionApplicationCodec(func.function(), this, spec))).codec()
-                        .comapFlatMap(f -> type.contains(((VExpression.FunctionApplication) f.resolveTypes(this, spec)).resolvedSignature().outputType())
-                                        ? DataResult.success(f)
-                                        : DataResult.error(() -> "Unmatched type"),
+        return this.cachedVExpressionCodecs.computeIfAbsent(new TypeAndSpecCacheKey(type, spec), $ ->
+                this.expressionMultiCodecForType(type, spec).comapFlatMap(
+                        exprs -> exprs.stream()
+                                .map(expr -> expr.resolveTypes(this, spec))
+                                .map(DataResult::result)
+                                .filter(Optional::isPresent)
+                                .map(Optional::get)
+                                .filter(expr -> type.contains(expr.type()))
+                                .map(DataResult::success)
+                                .findFirst()
+                                .orElse(DataResult.error(() -> "Unmatched type")),
+                        List::of)
+        );
+    }
+
+    @Override
+    public Codec<List<VExpression>> expressionMultiCodecForType(VType type, EvaluationContext.Spec spec) {
+        return this.cachedVExpressionMultiCodecs.computeIfAbsent(new TypeAndSpecCacheKey(type, spec), $ -> new VExpressionCodec(
+                ValueDecoder.createCodec(this, spec, type),
+                KeyDispatchCodec.<VFunctionDefinition, List<VExpression.FunctionApplication>>unsafe("function", Codec.STRING.comapFlatMap(
+                                        name -> Optional.ofNullable(this.functions.get(name)).map(DataResult::success).orElse(DataResult.error(() -> "No such function with name "+name)),
+                                        VFunctionDefinition::name),
+                                exprs -> exprs.stream().map(expr -> DataResult.success(expr.function())).findFirst().orElse(DataResult.error(() -> "No entry in list!")),
+                                func -> DataResult.success(FunctionApplicationDecoder.createCodec(func, this, spec)),
+                                funcs -> funcs.stream().map(func -> DataResult.success(FunctionApplicationDecoder.createCodec(func.function(), this, spec))).findFirst().orElse(DataResult.error(() -> "No entry in list!"))).codec()
+                        .comapFlatMap(fs -> Optional.of(fs.stream()
+                                                .map(f -> f.resolveTypes(this, spec)
+                                                        .flatMap(fr -> type.contains(((VExpression.FunctionApplication)fr).resolvedSignature().outputType())
+                                                                ? DataResult.success((VExpression.FunctionApplication) fr)
+                                                                : DataResult.error(() -> "Unmatched type")))
+                                                .map(DataResult::result)
+                                                .filter(Optional::isPresent)
+                                                .map(Optional::get)
+                                                .toList())
+                                        .filter(l -> !l.isEmpty())
+                                        .map(DataResult::success)
+                                        .orElse(DataResult.error(() -> "Unmatched type")),
                                 Function.identity()),
                 VariableRefCodec.CODEC,
-                new ObjectConstructionCodec(this, spec).comapFlatMap(o -> type.contains(o.resolveTypes(this, spec).type()) ? DataResult.success(o) : DataResult.error(() -> "Unmatched type"), Function.identity()),
-                new ListConstructionCodec(this, spec, type)));
+                ObjectConstructionDecoder.createCodec(this, spec).comapFlatMap(os ->
+                        Optional.of(os.stream()
+                                .map(o -> o.resolveTypes(this, spec)
+                                        .flatMap(or -> type.contains(or.type())
+                                                ? DataResult.success((VExpression.ObjectConstruction) or)
+                                                : DataResult.error(() -> "Unmatched type")))
+                                        .map(DataResult::result)
+                                        .filter(Optional::isPresent)
+                                        .map(Optional::get)
+                                        .toList())
+                                .filter(l -> !l.isEmpty())
+                                .map(DataResult::success)
+                                .orElse(DataResult.error(() -> "Unmatched type!")),
+                        Function.identity()),
+                ListConstructionDecoder.createCodec(this, spec, type)));
     }
 
     @Override
