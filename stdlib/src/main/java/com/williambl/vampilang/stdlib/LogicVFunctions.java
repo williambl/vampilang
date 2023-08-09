@@ -27,7 +27,7 @@ public final class LogicVFunctions {
         return new VFunctionDefinition(
                 name,
                 new VFunctionSignature(Map.of("operands", StandardVTypes.LIST.with(0, StandardVTypes.BOOLEAN)), StandardVTypes.BOOLEAN),
-                (ctx, sig, args) -> new VValue(sig.outputType(), operator.apply(((List<Boolean>) args.get("operands").value()).stream())));
+                (ctx, sig, args) -> new VValue(sig.outputType(), operator.apply(((List<VValue>) args.get("operands").value()).stream().map(v -> v.get(StandardVTypes.BOOLEAN)))));
     }
 
     public static VFunctionDefinition fromUnaryOperator(String name, UnaryOperator<Boolean> operator) {

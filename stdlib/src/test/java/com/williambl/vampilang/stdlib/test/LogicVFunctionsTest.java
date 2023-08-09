@@ -1,10 +1,7 @@
 package com.williambl.vampilang.stdlib.test;
 
 import com.google.common.collect.Sets;
-import com.williambl.vampilang.lang.EvaluationContext;
-import com.williambl.vampilang.lang.VEnvironment;
-import com.williambl.vampilang.lang.VEnvironmentImpl;
-import com.williambl.vampilang.lang.VExpression;
+import com.williambl.vampilang.lang.*;
 import com.williambl.vampilang.lang.function.VFunctionDefinition;
 import com.williambl.vampilang.stdlib.ArithmeticVFunctions;
 import com.williambl.vampilang.stdlib.LogicVFunctions;
@@ -61,7 +58,7 @@ public class LogicVFunctionsTest {
 
     private static void fromMultiOperator(VFunctionDefinition function, List<MultiOperatorTestCase> cases) {
         for (var test : cases) {
-            var expr = VExpression.functionApplication(function, Map.of("operands", VExpression.value(StandardVTypes.LIST.with(0, StandardVTypes.BOOLEAN), test.inputs()))).resolveTypes(ENV, new EvaluationContext.Spec()).result();
+            var expr = VExpression.functionApplication(function, Map.of("operands", VExpression.list(test.inputs().stream().map(b -> VExpression.value(StandardVTypes.BOOLEAN, b)).toList()))).resolveTypes(ENV, new EvaluationContext.Spec()).result();
             Assertions.assertTrue(expr.isPresent());
             var res = expr.get().evaluate(new EvaluationContext());
             Assertions.assertEquals(StandardVTypes.BOOLEAN, res.type());
