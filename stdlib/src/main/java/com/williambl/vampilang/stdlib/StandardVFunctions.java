@@ -57,6 +57,19 @@ public class StandardVFunctions {
                 });
     });
 
+    public static final VFunctionDefinition UNWRAP_OPTIONAL = create(() -> {
+        var type = StandardVTypes.TEMPLATE_ANY.uniquise(new HashMap<>());
+        return new VFunctionDefinition("map_optional",
+                new VFunctionSignature(Map.of(
+                        "optional", StandardVTypes.OPTIONAL.with(0, type),
+                        "fallback", type
+                ), type),
+                (ctx, sig, args) -> {
+                    Optional<Object> opt = args.get("optional").getUnchecked();
+                    return opt.map(o -> new VValue(sig.outputType(), o)).orElseGet(() -> args.get("fallback"));
+                });
+    });
+
     //TODO flatmap + filter
 
 
@@ -90,5 +103,6 @@ public class StandardVFunctions {
         env.registerFunction(LESS_THAN_OR_EQUAL);
         env.registerFunction(GREATER_THAN_OR_EQUAL);
         env.registerFunction(MAP_OPTIONAL);
+        env.registerFunction(UNWRAP_OPTIONAL);
     }
 }

@@ -92,7 +92,7 @@ public class StandardVFunctionsTest {
                 Optional.of(0.5),
                 Optional.empty());
 
-        var spec = new EvaluationContext.Spec(Map.of("input", StandardVTypes.OPTIONAL_MAPPING.with(0, StandardVTypes.NUMBER)));
+        var spec = new EvaluationContext.Spec(Map.of("input", StandardVTypes.OPTIONAL.with(0, StandardVTypes.NUMBER)));
         var expr = VExpression.functionApplication(StandardVFunctions.MAP_OPTIONAL, Map.of(
                 "optional", VExpression.variable("input"),
                 "mapping", VExpression.lambda(
@@ -109,6 +109,29 @@ public class StandardVFunctionsTest {
             var res = expr.get().evaluate(EvaluationContext.builder(spec).addVariable("input", value).build());
             Assertions.assertEquals(optionalNumberType, res.type());
             Assertions.assertEquals(test.map(d -> d > 1.0), res.value());
+        }
+    }
+
+    @Test
+    public void unwrapOptionalTest() {
+        var optionalNumberType = StandardVTypes.OPTIONAL.with(0, StandardVTypes.NUMBER);
+        Set<Optional<Double>> values = Set.of(
+                Optional.of(3.0),
+                Optional.of(0.5),
+                Optional.empty());
+
+        var spec = new EvaluationContext.Spec(Map.of("input", StandardVTypes.OPTIONAL.with(0, StandardVTypes.NUMBER)));
+        var expr = VExpression.functionApplication(StandardVFunctions.UNWRAP_OPTIONAL, Map.of(
+                        "optional", VExpression.variable("input"),
+                        "fallback", VExpression.value(StandardVTypes.NUMBER, 100.0)))
+                .resolveTypes(ENV, spec).result();
+
+        Assertions.assertTrue(expr.isPresent());
+        for (var test : values) {
+            var value = new VValue(optionalNumberType, test);
+            var res = expr.get().evaluate(EvaluationContext.builder(spec).addVariable("input", value).build());
+            Assertions.assertEquals(optionalNumberType, res.type());
+            Assertions.assertEquals(test.orElse(100.0), res.value());
         }
     }
 
