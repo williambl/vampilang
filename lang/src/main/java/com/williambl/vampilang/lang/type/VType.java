@@ -1,6 +1,7 @@
 package com.williambl.vampilang.lang.type;
 
 import com.google.common.reflect.TypeToken;
+import com.williambl.vampilang.lang.EvaluationContext;
 import com.williambl.vampilang.lang.TypeNamer;
 import com.williambl.vampilang.lang.VValue;
 
@@ -48,5 +49,9 @@ public sealed interface VType permits SimpleVType, VParameterisedType, VTemplate
 
     static VParameterisedType createParameterised(VType bare, VType... typeParams) {
         return new VParameterisedType(bare, List.of(typeParams), (t, o) -> bare.accepts(o));
+    }
+
+    static LambdaVType createLambda(VType bare, VType resultType, EvaluationContext.Spec spec) {
+        return new LambdaVType(bare, resultType, spec);
     }
 }

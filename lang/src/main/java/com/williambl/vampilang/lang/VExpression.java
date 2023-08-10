@@ -4,6 +4,7 @@ import com.mojang.serialization.DataResult;
 import com.williambl.vampilang.lang.function.VFunctionDefinition;
 import com.williambl.vampilang.lang.function.VFunctionSignature;
 import com.williambl.vampilang.lang.type.ConstructableVType;
+import com.williambl.vampilang.lang.type.LambdaVType;
 import com.williambl.vampilang.lang.type.VParameterisedType;
 import com.williambl.vampilang.lang.type.VType;
 import org.jetbrains.annotations.Nullable;
@@ -31,6 +32,10 @@ public sealed interface VExpression {
 
     static VExpression list(List<VExpression> entries) {
         return new ListConstruction(null, entries);
+    }
+
+    static VExpression lambda(LambdaVType type, VExpression expr) {
+        return new Lambda(type, expr);
     }
 
     public record FunctionApplication(VFunctionDefinition function, @Nullable VFunctionSignature resolvedSignature, Map<String, VExpression> inputs) implements VExpression {
@@ -296,6 +301,24 @@ public sealed interface VExpression {
             builder.append(this.resolvedType == null ? "?" : this.resolvedType.toString(ctx));
             builder.append(")");
             return builder.toString();
+        }
+    }
+
+    public record Lambda(LambdaVType type, VExpression expr) implements VExpression {
+
+        @Override
+        public DataResult<VExpression> resolveTypes(VEnvironment env, EvaluationContext.Spec spec) {
+            return this.expr.resolveTypes(env, spec.merge(this.type.specToMerge)).map(expr -> new Lambda(this.type, expr));
+        }
+
+        @Override
+        public String toString(TypeNamer ctx) {
+            return "(lambda %s : %s)".formatted(this.expr.toString(ctx), this.type.toString(ctx));
+        }
+
+        @Override
+        public VValue evaluate(EvaluationContext ctx) {
+            return new VValue(this.type, this.expr);
         }
     }
 

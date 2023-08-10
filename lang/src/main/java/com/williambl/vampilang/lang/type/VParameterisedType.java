@@ -9,7 +9,7 @@ import java.util.Objects;
 import java.util.function.BiPredicate;
 import java.util.stream.Collectors;
 
-public final class VParameterisedType implements VType {
+public sealed class VParameterisedType implements VType permits LambdaVType {
     public final VType bareType;
     public final List<VType> parameters;
     private final BiPredicate<VParameterisedType, Object> predicate;

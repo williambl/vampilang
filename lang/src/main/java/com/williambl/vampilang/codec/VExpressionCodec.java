@@ -13,13 +13,15 @@ public class VExpressionCodec implements Codec<List<VExpression>> {
     private final Codec<VExpression.VariableRef> variableRefCodec;
     private final Codec<List<VExpression.ObjectConstruction>> objectConstructionCodec;
     private final Codec<List<VExpression.ListConstruction>> listConstructionCodec;
+    private final Codec<List<VExpression.Lambda>> lambdaCodec;
 
-    public VExpressionCodec(Codec<List<VExpression.Value>> valueCodec, Codec<List<VExpression.FunctionApplication>> functionApplicationCodec, Codec<VExpression.VariableRef> variableRefCodec, Codec<List<VExpression.ObjectConstruction>> objectConstructionCodec, Codec<List<VExpression.ListConstruction>> listConstructionCodec) {
+    public VExpressionCodec(Codec<List<VExpression.Value>> valueCodec, Codec<List<VExpression.FunctionApplication>> functionApplicationCodec, Codec<VExpression.VariableRef> variableRefCodec, Codec<List<VExpression.ObjectConstruction>> objectConstructionCodec, Codec<List<VExpression.ListConstruction>> listConstructionCodec, Codec<List<VExpression.Lambda>> lambdaCodec) {
         this.valueCodec = valueCodec;
         this.functionApplicationCodec = functionApplicationCodec;
         this.variableRefCodec = variableRefCodec;
         this.objectConstructionCodec = objectConstructionCodec;
         this.listConstructionCodec = listConstructionCodec;
+        this.lambdaCodec = lambdaCodec;
     }
 
     @Override
@@ -50,12 +52,18 @@ public class VExpressionCodec implements Codec<List<VExpression>> {
             results.addAll(valueRead.result().get().getFirst());
         }
 
+        var lambdaRead = this.lambdaCodec.decode(ops, input).map(p -> p.mapFirst(l -> l.stream().map(VExpression.class::cast).toList()));
+        if (lambdaRead.result().isPresent()) {
+            results.addAll(lambdaRead.result().get().getFirst());
+        }
+
         if (results.isEmpty()) {
-            return DataResult.error(() -> "Not a valid variable ref, value, list, object, or function application. Error from each:\nvariable ref: %s,\nvalue: %s,\nlist: %s,\nobject: %s,\nfunction application: %s".formatted(
+            return DataResult.error(() -> "Not a valid variable ref, value, list, object, lambda, or function application. Error from each:\nvariable ref: %s,\nvalue: %s,\nlist: %s,\nobject: %s,\nlambda: %s,\nfunction application: %s".formatted(
                     variableRefRead.error().map(DataResult.PartialResult::message).orElse("?"),
                     valueRead.error().map(DataResult.PartialResult::message).orElse("?"),
                     listRead.error().map(DataResult.PartialResult::message).orElse("?"),
                     objectRead.error().map(DataResult.PartialResult::message).orElse("?"),
+                    lambdaRead.error().map(DataResult.PartialResult::message).orElse("?"),
                     functionApplicationRead.error().map(DataResult.PartialResult::message).orElse("?")));
         }
 
@@ -79,6 +87,8 @@ public class VExpressionCodec implements Codec<List<VExpression>> {
             return this.objectConstructionCodec.encode(List.of(objectInput), ops, prefix);
         } else if (input instanceof VExpression.ListConstruction listInput) {
             return this.listConstructionCodec.encode(List.of(listInput), ops, prefix);
+        } else if (input instanceof VExpression.Lambda lambdaInput) {
+            return this.lambdaCodec.encode(List.of(lambdaInput), ops, prefix);
         }
 
         return DataResult.error(() -> "Expected VExpression to be one of FunctionApplication, Value, or VariableRef!");

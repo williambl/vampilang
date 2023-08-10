@@ -462,4 +462,73 @@ public class CodecTest {
             Assertions.assertEquals(true, resolvedExpr.result().get().evaluate(new EvaluationContext()).value());
         }
     }
+
+    @Test
+    public void testDeserialiseFunctionApplicationWithLambda() {
+        var intType = VType.create(TypeToken.of(Integer.class));
+        var optionalIntType = VType.create(TypeToken.of(OptionalInt.class));
+        var bareIntToIntType = VType.create();
+        var intToIntType = VType.createLambda(bareIntToIntType, intType, new EvaluationContext.Spec(Map.of("unwrapped_optional", intType)));
+        var codecRegistry = new VEnvironmentImpl();
+        var mapOptionalFunction = new VFunctionDefinition("map-optional", new VFunctionSignature(Map.of(
+                "optional", optionalIntType,
+                "mapping_function", intToIntType),
+                optionalIntType),
+                (ctx, sig, a) -> new VValue(sig.outputType(), a.get("optional").get(optionalIntType).stream().map(i -> a.get("mapping_function").<VExpression>getUnchecked().evaluate(ctx.with("unwrapped_optional", new VValue(intType, i))).get(intType)).findFirst()));
+        var addFunction = new VFunctionDefinition("add", new VFunctionSignature(Map.of(
+                "a", intType,
+                "b", intType),
+                intType),
+                (ctx, sig, a) -> new VValue(sig.outputType(), a.get("a").get(intType) + a.get("b").get(intType)));
+        codecRegistry.registerCodecForType(intType, Codec.INT);
+        codecRegistry.registerFunction(mapOptionalFunction);
+        codecRegistry.registerFunction(addFunction);
+        {
+            var spec = new EvaluationContext.Spec(Map.of("my_var", optionalIntType, "a", intType));
+            var codec = codecRegistry.expressionCodecForType(optionalIntType, spec);
+            var res = codec.decode(JsonOps.INSTANCE, JsonParser.parseString("{\"function\": \"map-optional\", \"optional\": {\"var\": \"my_var\"}, \"mapping_function\": {\"function\": \"add\", \"a\": {\"var\": \"unwrapped_optional\"}, \"b\": {\"var\": \"a\"}}}"));
+            Assertions.assertTrue(res.result().isPresent());
+            var resExpr = res.result().get().getFirst();
+            var resolvedExpr = resExpr.resolveTypes(codecRegistry, spec);
+            Assertions.assertTrue(resolvedExpr.result().isPresent());
+            Assertions.assertEquals(OptionalInt.of(4), resolvedExpr.result().get().evaluate(EvaluationContext.builder(spec).addVariable("my_var", new VValue(optionalIntType, OptionalInt.of(2))).addVariable( "a", new VValue(intType, 2)).build()).value());
+        }
+    }
+
+    @Test
+    public void testSerialiseFunctionApplicationWithLambda() {
+        var intType = VType.create(TypeToken.of(Integer.class));
+        var optionalIntType = VType.create(TypeToken.of(OptionalInt.class));
+        var bareIntToIntType = VType.create();
+        var intToIntType = VType.createLambda(bareIntToIntType, intType, new EvaluationContext.Spec(Map.of("unwrapped_optional", intType)));
+        var codecRegistry = new VEnvironmentImpl();
+        var mapOptionalFunction = new VFunctionDefinition("map-optional", new VFunctionSignature(Map.of(
+                "optional", optionalIntType,
+                "mapping_function", intToIntType),
+                optionalIntType),
+                (ctx, sig, a) -> new VValue(sig.outputType(), a.get("optional").get(optionalIntType).stream().map(i -> a.get("mapping_function").<VExpression>getUnchecked().evaluate(ctx.with("unwrapped_optional", new VValue(intType, i))).get(intType)).findFirst()));
+        var addFunction = new VFunctionDefinition("add", new VFunctionSignature(Map.of(
+                "a", intType,
+                "b", intType),
+                intType),
+                (ctx, sig, a) -> new VValue(sig.outputType(), a.get("a").get(intType) + a.get("b").get(intType)));
+        codecRegistry.registerCodecForType(intType, Codec.INT);
+        codecRegistry.registerFunction(mapOptionalFunction);
+        codecRegistry.registerFunction(addFunction);
+        {
+            var spec = new EvaluationContext.Spec(Map.of("my_var", optionalIntType, "a", intType));
+            var codec = codecRegistry.expressionCodecForType(optionalIntType, spec);
+            var program = VExpression.functionApplication(mapOptionalFunction, Map.of(
+                    "optional", VExpression.variable("my_var"),
+                    "mapping_function", VExpression.lambda(intToIntType, VExpression.functionApplication(addFunction, Map.of(
+                            "a", VExpression.variable("unwrapped_optional"),
+                            "b", VExpression.variable("a"))))))
+                    .resolveTypes(codecRegistry, spec);
+            Assertions.assertTrue(program.result().isPresent());
+            var res = codec.encodeStart(JsonOps.INSTANCE, program.result().get());
+            Assertions.assertTrue(res.result().isPresent());
+            var resJson = res.result().get();
+            Assertions.assertEquals(JsonParser.parseString("{\"function\": \"map-optional\", \"optional\": {\"var\": \"my_var\"}, \"mapping_function\": {\"function\": \"add\", \"a\": {\"var\": \"unwrapped_optional\"}, \"b\": {\"var\": \"a\"}}}"), resJson);
+        }
+    }
 }

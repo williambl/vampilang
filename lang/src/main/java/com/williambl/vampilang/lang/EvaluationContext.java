@@ -76,6 +76,12 @@ public class EvaluationContext {
             return this.variableTypes.get(variableName);
         }
 
+        public Spec merge(Spec other) {
+            var types = new HashMap<>(this.variableTypes);
+            types.putAll(other.variableTypes);
+            return new Spec(Map.copyOf(types));
+        }
+
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
