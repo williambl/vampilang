@@ -87,6 +87,7 @@ public class StandardVFunctionsTest {
     @Test
     public void mapOptionalTest() {
         var optionalNumberType = StandardVTypes.OPTIONAL.with(0, StandardVTypes.NUMBER);
+        var optionalBooleanType = StandardVTypes.OPTIONAL.with(0, StandardVTypes.BOOLEAN);
         Set<Optional<Double>> values = Set.of(
                 Optional.of(3.0),
                 Optional.of(0.5),
@@ -107,7 +108,7 @@ public class StandardVFunctionsTest {
         for (var test : values) {
             var value = new VValue(optionalNumberType, test);
             var res = expr.get().evaluate(EvaluationContext.builder(spec).addVariable("input", value).build());
-            Assertions.assertEquals(optionalNumberType, res.type());
+            Assertions.assertEquals(optionalBooleanType, res.type());
             Assertions.assertEquals(test.map(d -> d > 1.0), res.value());
         }
     }
@@ -130,7 +131,7 @@ public class StandardVFunctionsTest {
         for (var test : values) {
             var value = new VValue(optionalNumberType, test);
             var res = expr.get().evaluate(EvaluationContext.builder(spec).addVariable("input", value).build());
-            Assertions.assertEquals(optionalNumberType, res.type());
+            Assertions.assertEquals(StandardVTypes.NUMBER, res.type());
             Assertions.assertEquals(test.orElse(100.0), res.value());
         }
     }
