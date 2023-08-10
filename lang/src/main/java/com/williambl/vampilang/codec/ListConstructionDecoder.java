@@ -1,5 +1,6 @@
 package com.williambl.vampilang.codec;
 
+import com.google.common.collect.Sets;
 import com.mojang.datafixers.util.Pair;
 import com.mojang.serialization.*;
 import com.williambl.vampilang.lang.EvaluationContext;
@@ -9,7 +10,10 @@ import com.williambl.vampilang.lang.function.VFunctionDefinition;
 import com.williambl.vampilang.lang.type.VParameterisedType;
 import com.williambl.vampilang.lang.type.VType;
 
+import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class ListConstructionDecoder implements Decoder<List<VExpression.ListConstruction>> {
     private final VEnvironment vTypeCodecs;
@@ -25,8 +29,18 @@ public class ListConstructionDecoder implements Decoder<List<VExpression.ListCon
     @Override
     public <T> DataResult<Pair<List<VExpression.ListConstruction>, T>> decode(DynamicOps<T> ops, T input) {
         if (this.expectedType != null) {
-            var listCodec = this.vTypeCodecs.expressionMultiCodecForType(this.expectedType.parameters.get(0), this.spec).listOf() //TODO cache
-                    .xmap(l -> l.stream().map(entries -> (VExpression.ListConstruction) VExpression.list(entries)).toList(), l -> l.stream().map(VExpression.ListConstruction::entries).toList());
+            Codec<List<VExpression.ListConstruction>> listCodec = this.vTypeCodecs.expressionMultiCodecForType(this.expectedType.parameters.get(0), this.spec) // this codec produces a list of possible expressions
+                    .xmap(HashSet::new, ArrayList::new) // transform it into a set of possible expressions (so we can do cartesian product)
+                    .listOf() // transform it into a list of possible sets of expressions, one set for each list entry
+                    .comapFlatMap(possibilitiesForEntries -> {
+                        if (possibilitiesForEntries.isEmpty()) {
+                            return DataResult.error(() -> "No elements match");
+                        }
+                        var cartesianProduct = Sets.cartesianProduct(possibilitiesForEntries); // get the cartesian product of all the possibilities (all possible lists)
+                        return DataResult.success(cartesianProduct.stream().map(s -> (VExpression.ListConstruction) VExpression.list(s)).toList()); // transform it into a list of possible list expressions
+                    }, list -> list.stream().map(VExpression.ListConstruction::entries).map(HashSet::new).toList());
+
+
             return listCodec.decode(ops, input);
         } else {
             return DataResult.error(() -> "No types match");
