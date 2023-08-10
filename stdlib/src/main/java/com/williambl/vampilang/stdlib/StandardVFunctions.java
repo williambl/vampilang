@@ -47,7 +47,7 @@ public class StandardVFunctions {
                 new VFunctionSignature(Map.of(
                         "optional", StandardVTypes.OPTIONAL.with(0, type),
                         "mapping", StandardVTypes.OPTIONAL_MAPPING.with(0, output).with(1, type)
-                ), StandardVTypes.OPTIONAL.with(1, output)),
+                ), StandardVTypes.OPTIONAL.with(0, output)),
                 (ctx, sig, args) -> {
                     var optContainingType = ((VParameterisedType) sig.inputTypes().get("optional")).parameters.get(0);
                     Optional<Object> opt = args.get("optional").getUnchecked();
