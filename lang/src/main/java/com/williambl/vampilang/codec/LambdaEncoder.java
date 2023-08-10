@@ -18,7 +18,7 @@ public class LambdaEncoder implements Encoder<VExpression.Lambda> {
 
     @Override
     public <T> DataResult<T> encode(VExpression.Lambda input, DynamicOps<T> ops, T prefix) {
-        Encoder<VExpression> encoder = this.vTypeCodecs.expressionCodecForType(input.type().parameters.get(0), this.spec.merge(input.type().specToMerge));
+        Encoder<VExpression> encoder = this.vTypeCodecs.expressionCodecForType(input.type().parameters.get(0), this.spec.merge(input.type().specToMerge()));
         return encoder.encode(input.expr(), ops, prefix);
     }
 }

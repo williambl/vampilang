@@ -2,16 +2,16 @@ package com.williambl.vampilang.stdlib;
 
 import com.sun.source.tree.BreakTree;
 import com.williambl.vampilang.lang.VEnvironment;
+import com.williambl.vampilang.lang.VExpression;
 import com.williambl.vampilang.lang.VValue;
 import com.williambl.vampilang.lang.function.VFunctionDefinition;
 import com.williambl.vampilang.lang.function.VFunctionSignature;
+import com.williambl.vampilang.lang.type.VParameterisedType;
 import com.williambl.vampilang.lang.type.VType;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.BiPredicate;
+import java.util.function.Supplier;
 
 public class StandardVFunctions {
     public static final VFunctionDefinition IF_ELSE = new VFunctionDefinition("if-else",
@@ -40,6 +40,25 @@ public class StandardVFunctions {
     public static final VFunctionDefinition LESS_THAN_OR_EQUAL = createNumberComparison("<=", (a, b) -> a <= b);
     public static final VFunctionDefinition GREATER_THAN_OR_EQUAL = createNumberComparison(">=", (a, b) -> a >= b);
 
+    public static final VFunctionDefinition MAP_OPTIONAL = create(() -> {
+        var type = StandardVTypes.TEMPLATE_ANY.uniquise(new HashMap<>());
+        var output = StandardVTypes.TEMPLATE_ANY.uniquise(new HashMap<>());
+        return new VFunctionDefinition("map_optional",
+                new VFunctionSignature(Map.of(
+                        "optional", StandardVTypes.OPTIONAL.with(0, type),
+                        "mapping", StandardVTypes.OPTIONAL_MAPPING.with(0, output).with(1, type)
+                ), StandardVTypes.OPTIONAL.with(1, output)),
+                (ctx, sig, args) -> {
+                    var optContainingType = ((VParameterisedType) sig.inputTypes().get("optional")).parameters.get(0);
+                    Optional<Object> opt = args.get("optional").getUnchecked();
+                    VExpression mapping = args.get("mapping").getUnchecked();
+                    Optional<Object> res = opt.map(o -> mapping.evaluate(ctx.with("unwrapped_optional", new VValue(optContainingType, o))).value());
+                    return new VValue(sig.outputType(), res);
+                });
+    });
+
+    //TODO flatmap + filter
+
 
     private static VFunctionDefinition createNumberComparison(String name, BiPredicate<Double, Double> predicate) {
         return new VFunctionDefinition(name,
@@ -57,6 +76,10 @@ public class StandardVFunctions {
                 (ctx, sig, args) -> new VValue(sig.outputType(), predicate.test(args.get("a").getUnchecked(), args.get("b").getUnchecked())));
     }
 
+    private static VFunctionDefinition create(Supplier<VFunctionDefinition> sup) {
+        return sup.get();
+    }
+
     public static void register(VEnvironment env) {
         env.registerFunction(IF_ELSE);
         env.registerFunction(MATCH);
@@ -66,5 +89,6 @@ public class StandardVFunctions {
         env.registerFunction(GREATER_THAN);
         env.registerFunction(LESS_THAN_OR_EQUAL);
         env.registerFunction(GREATER_THAN_OR_EQUAL);
+        env.registerFunction(MAP_OPTIONAL);
     }
 }

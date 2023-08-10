@@ -29,7 +29,7 @@ public class LambdaDecoder implements Decoder<List<VExpression.Lambda>> {
             return null;
         }
 
-        return this.vTypeCodecs.expressionMultiCodecForType(lambdaVType.parameters.get(0), this.spec.merge(lambdaVType.specToMerge));
+        return this.vTypeCodecs.expressionMultiCodecForType(lambdaVType.parameters.get(0), this.spec.merge(lambdaVType.specToMerge()));
     }
 
     @Override

@@ -388,7 +388,7 @@ public class CodecTest {
         {
             var spec = new EvaluationContext.Spec(Map.of("my_var", typeA));
             var codec = env.expressionCodecForType(anyType, spec);
-            var programStr = "{\"function\":\"head\",\"list\": [{\"var\":\"my_var\"}, 2.0],\"fallback\":3.0}";
+            var programStr = "{\"function\":\"head\",\"list\": [{\"var\":\"my_var\"}, 2.0],\"fallback\":3.0}"; //fixme why is this not preserving order in the list
             var res = codec.decode(JsonOps.INSTANCE, JsonParser.parseString(programStr));
             Assertions.assertTrue(res.result().isPresent());
             var resProg = res.result().get().getFirst();

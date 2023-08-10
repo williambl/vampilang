@@ -51,7 +51,11 @@ public sealed interface VType permits SimpleVType, VParameterisedType, VTemplate
         return new VParameterisedType(bare, List.of(typeParams), (t, o) -> bare.accepts(o));
     }
 
+    static LambdaVType createLambda(VType bare, VType resultType, List<VType> paramedInputTypes, Function<LambdaVType, EvaluationContext.Spec> specFunction) {
+        return new LambdaVType(bare, resultType, paramedInputTypes, specFunction);
+    }
+
     static LambdaVType createLambda(VType bare, VType resultType, EvaluationContext.Spec spec) {
-        return new LambdaVType(bare, resultType, spec);
+        return new LambdaVType(bare, resultType, List.of(), p -> spec);
     }
 }

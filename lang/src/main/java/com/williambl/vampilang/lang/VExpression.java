@@ -308,7 +308,7 @@ public sealed interface VExpression {
 
         @Override
         public DataResult<VExpression> resolveTypes(VEnvironment env, EvaluationContext.Spec spec) {
-            return this.expr.resolveTypes(env, spec.merge(this.type.specToMerge)).map(expr -> new Lambda(this.type, expr));
+            return this.expr.resolveTypes(env, spec.merge(this.type.specToMerge())).map(expr -> new Lambda(this.type, expr));
         }
 
         @Override

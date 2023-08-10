@@ -10,10 +10,7 @@ import com.williambl.vampilang.stdlib.StandardVTypes;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.function.BinaryOperator;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -84,6 +81,34 @@ public class StandardVFunctionsTest {
             Assertions.assertEquals(StandardVTypes.BOOLEAN, notEqualsRes.result().map(VValue::type).orElse(null));
             Assertions.assertEquals(expected, equalsRes.result().map(VValue::value).orElse(null));
             Assertions.assertEquals(!expected, notEqualsRes.result().map(VValue::value).orElse(null));
+        }
+    }
+
+    @Test
+    public void mapOptionalTest() {
+        var optionalNumberType = StandardVTypes.OPTIONAL.with(0, StandardVTypes.NUMBER);
+        Set<Optional<Double>> values = Set.of(
+                Optional.of(3.0),
+                Optional.of(0.5),
+                Optional.empty());
+
+        var spec = new EvaluationContext.Spec(Map.of("input", StandardVTypes.OPTIONAL_MAPPING.with(0, StandardVTypes.NUMBER)));
+        var expr = VExpression.functionApplication(StandardVFunctions.MAP_OPTIONAL, Map.of(
+                "optional", VExpression.variable("input"),
+                "mapping", VExpression.lambda(
+                        StandardVTypes.OPTIONAL_MAPPING.with(List.of(StandardVTypes.BOOLEAN, StandardVTypes.NUMBER)),
+                        VExpression.functionApplication(
+                        StandardVFunctions.GREATER_THAN, Map.of(
+                                        "a", VExpression.variable("unwrapped_optional"),
+                                        "b", VExpression.value(StandardVTypes.NUMBER, 1.0))))))
+                .resolveTypes(ENV, spec).result();
+
+        Assertions.assertTrue(expr.isPresent());
+        for (var test : values) {
+            var value = new VValue(optionalNumberType, test);
+            var res = expr.get().evaluate(EvaluationContext.builder(spec).addVariable("input", value).build());
+            Assertions.assertEquals(optionalNumberType, res.type());
+            Assertions.assertEquals(test.map(d -> d > 1.0), res.value());
         }
     }
 
