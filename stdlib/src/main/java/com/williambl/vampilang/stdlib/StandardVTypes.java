@@ -27,8 +27,7 @@ public final class StandardVTypes {
         env.registerType("string", STRING, Codec.STRING);
         env.registerType("boolean", BOOLEAN, Codec.BOOL);
         env.registerType("list", RAW_LIST);
-        env.registerCodecForParameterisedType(RAW_LIST, paramed -> env.rawCodecForType(paramed.parameters.get(0)).listOf());
-        env.registerType("match_case", RAW_MATCH_CASE);
+        env.registerType("match_case", RAW_MATCH_CASE); //TODO match cases need to be constructable (how also make them parameterised? probably make VParameterisedType and ConstructableVType interfaces)
         //noinspection unchecked
         env.registerCodecForParameterisedType(RAW_MATCH_CASE, paramed -> RecordCodecBuilder.<Map.Entry<Object, Object>>create(instance -> instance.group(
                 ((Codec<Object>) env.rawCodecForType(paramed.parameters.get(0))).fieldOf("when").forGetter(Map.Entry::getKey),
