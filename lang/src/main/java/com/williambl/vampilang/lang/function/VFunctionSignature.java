@@ -70,9 +70,22 @@ public record VFunctionSignature(Map<String, VType> inputTypes, VType outputType
         }
 
         return DataResult.success(new VFunctionSignature(
-                this.inputTypes.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, kv -> reducedResolvedTemplates.getOrDefault(kv.getValue(), kv.getValue()))),
-                reducedResolvedTemplates.getOrDefault(this.outputType, this.outputType)
+                this.inputTypes.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, kv -> recursivelyRetrieveResolvedType(reducedResolvedTemplates, kv.getValue()))),
+                recursivelyRetrieveResolvedType(reducedResolvedTemplates, this.outputType)
         ));
+    }
+
+    private static VType recursivelyRetrieveResolvedType(Map<VType, VType> resolvedTemplates, VType input) {
+        if (resolvedTemplates.containsKey(input)) {
+            return resolvedTemplates.get(input);
+        }
+
+        if (input instanceof VParameterisedType paramed) {
+            var moreSpecificParams = paramed.parameters.stream().map(p -> recursivelyRetrieveResolvedType(resolvedTemplates, p)).toList();
+            return paramed.with(moreSpecificParams);
+        }
+
+        return input;
     }
 
     private static void recursivelyResolveTypes(Map<VType, Set<VType>> resolvedTemplates, VType input, VType actual) {
