@@ -10,6 +10,7 @@ import com.williambl.vampilang.lang.type.VType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 
@@ -201,5 +202,32 @@ public class EvaluationTest {
         var result = Assertions.assertDoesNotThrow(() -> resolved.get().evaluate(EvaluationContext.builder(evaluationSpec).addVariable("var1", new VValue(intType, 5)).addVariable("var2", new VValue(intType, 10)).build()));
         Assertions.assertEquals(mySpecialType, result.type());
         Assertions.assertEquals(new MySpecialObject(5 + 10, 5), result.value());
+    }
+
+    @Test
+    public void correctlyEvaluatesProgramWithList() {
+        var intType = VType.create();
+        var doubleType = VType.create();
+        var numType = VType.createTemplate(intType, doubleType);
+        var boolType = VType.create();
+        var anyType = VType.createTemplate();
+        var bareListType = VType.create();
+        var evaluationSpec = new EvaluationContext.Spec(Map.of("var1", intType));
+        var env = new VEnvironmentImpl();
+        env.registerType("int", intType);
+        env.registerType("double", doubleType);
+        env.registerType("number", numType);
+        env.registerType("bool", boolType);
+        env.registerType("any", anyType);
+        env.registerType("list", bareListType);
+        var program = VExpression.list(List.of(
+                VExpression.value(intType, 3),
+                VExpression.value(doubleType, 10.0),
+                VExpression.variable("var1")));
+        var resolved = program.resolveTypes(env, evaluationSpec).result();
+        Assertions.assertTrue(resolved.isPresent());
+        var result = Assertions.assertDoesNotThrow(() -> resolved.get().evaluate(EvaluationContext.builder(evaluationSpec).addVariable("var1", new VValue(intType, 5)).build()));
+        Assertions.assertEquals(env.listType().with(0, numType), result.type());
+        Assertions.assertEquals(List.of(new VValue(intType, 3), new VValue(doubleType, 10.0), new VValue(intType, 5)), result.value());
     }
 }

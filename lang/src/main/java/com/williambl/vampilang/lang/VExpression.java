@@ -9,6 +9,7 @@ import com.williambl.vampilang.lang.type.VParameterisedType;
 import com.williambl.vampilang.lang.type.VType;
 import org.jetbrains.annotations.Nullable;
 
+import javax.xml.crypto.Data;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -261,16 +262,27 @@ public sealed interface VExpression {
             }
 
             return VExpression.bubbleUp(this.entries.stream().map(e -> e.resolveTypes(env, spec))).map(Stream::toList).flatMap(resolvedEntries -> {
-                var entryType = resolvedEntries.size() > 0 ? resolvedEntries.get(0).type() : null;
-                if (entryType != null) {
-                    if (!resolvedEntries.stream().allMatch(e -> entryType.contains(e.type()))) { //TODO this is horrible, find the most general type of all of them instead
-                        return DataResult.error(() -> "Not all entries match type of first entry!");
+                if (resolvedEntries.isEmpty()) {
+                    return DataResult.success(new ListConstruction(listType, resolvedEntries));
+                }
+                VType mostSpecificCommonSupertype = null;
+                var allTypes = env.allTypes().values();
+                supertypes: for (var possibleSupertype : allTypes) {
+                    for (var entry : resolvedEntries) {
+                        if (!possibleSupertype.contains(entry.type())) {
+                            continue supertypes;
+                        }
                     }
-
-                    return DataResult.success(new ListConstruction(listType.with(0, entryType), resolvedEntries));
+                    if (mostSpecificCommonSupertype == null || mostSpecificCommonSupertype.contains(possibleSupertype)) {
+                        mostSpecificCommonSupertype = possibleSupertype;
+                    }
+                }
+                if (mostSpecificCommonSupertype == null) {
+                    String err = "No common supertype found for types [%s] in list!".formatted(resolvedEntries.stream().map(VExpression::type).map(Object::toString).collect(Collectors.joining(", ")));
+                    return DataResult.error(() -> err);
                 }
 
-                return DataResult.success(new ListConstruction(listType, resolvedEntries));
+                return DataResult.success(new ListConstruction(listType.with(0, mostSpecificCommonSupertype), resolvedEntries));
             });
         }
 
