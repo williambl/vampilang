@@ -35,6 +35,10 @@ public sealed interface VExpression {
         return new ListConstruction(null, entries);
     }
 
+    static VExpression list(VExpression... entries) {
+        return new ListConstruction(null, List.of(entries));
+    }
+
     static VExpression lambda(LambdaVType type, VExpression expr) {
         return new Lambda(type, expr);
     }
