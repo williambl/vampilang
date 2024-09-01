@@ -6,14 +6,13 @@ import com.mojang.serialization.*;
 import com.williambl.vampilang.lang.EvaluationContext;
 import com.williambl.vampilang.lang.VEnvironment;
 import com.williambl.vampilang.lang.VExpression;
-import com.williambl.vampilang.lang.function.VFunctionDefinition;
 import com.williambl.vampilang.lang.type.VParameterisedType;
 import com.williambl.vampilang.lang.type.VType;
 
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
-import java.util.stream.Collectors;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ListConstructionDecoder implements Decoder<List<VExpression.ListConstruction>> {
     private final VEnvironment vTypeCodecs;
@@ -29,6 +28,12 @@ public class ListConstructionDecoder implements Decoder<List<VExpression.ListCon
     @Override
     public <T> DataResult<Pair<List<VExpression.ListConstruction>, T>> decode(DynamicOps<T> ops, T input) {
         if (this.expectedType != null) {
+            if (isNotList(ops, input)) {
+                return DataResult.error(() -> "Not a list!");
+            }
+            if (isListEmpty(ops, input)) {
+                return DataResult.success(Pair.of(List.of((VExpression.ListConstruction) VExpression.list(this.expectedType)), input));
+            }
             Codec<List<VExpression.ListConstruction>> listCodec = this.vTypeCodecs.expressionMultiCodecForType(this.expectedType.parameters.get(0), this.spec) // this codec produces a list of possible expressions
                     .xmap(HashSet::new, ArrayList::new) // transform it into a set of possible expressions (so we can do cartesian product)
                     .listOf() // transform it into a list of possible sets of expressions, one set for each list entry
@@ -45,6 +50,16 @@ public class ListConstructionDecoder implements Decoder<List<VExpression.ListCon
         } else {
             return DataResult.error(() -> "No types match");
         }
+    }
+
+    private static <T> boolean isListEmpty(DynamicOps<T> ops, T input) {
+        AtomicInteger count = new AtomicInteger();
+        ops.getList(input).result().ifPresent(list -> list.accept($ -> count.getAndIncrement()));
+        return count.get() == 0;
+    }
+
+    private static <T> boolean isNotList(DynamicOps<T> ops, T input) {
+        return ops.getList(input).error().isPresent();
     }
 
     public static Codec<List<VExpression.ListConstruction>> createCodec(VEnvironment vTypeCodecs, EvaluationContext.Spec spec, VType expectedType) {

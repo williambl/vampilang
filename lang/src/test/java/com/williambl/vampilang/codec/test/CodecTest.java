@@ -398,6 +398,37 @@ public class CodecTest {
         }
     }
 
+    @Test
+    public void testDeserialiseFunctionApplicationWithEmptyListConstruction() {
+        var typeA = VType.create();
+        var typeB = VType.create();
+        var anyType = VType.createTemplate();
+        var listBareType = VType.create();
+        var listType = VType.createParameterised(listBareType, anyType);
+        var env = new VEnvironmentImpl();
+        var headFunction = new VFunctionDefinition("head", new VFunctionSignature(Map.of("list", listType, "fallback", anyType), anyType),
+                (ctx, sig, a) -> new VValue(sig.outputType(), (a.get("list").<List<VValue>>getUnchecked()).stream().map(VValue::value).findFirst().orElseGet(() -> a.get("fallback").value())));
+        env.registerType("a", typeA);
+        env.registerCodecForType(typeA, Codec.INT);
+        env.registerType("b", typeB);
+        env.registerCodecForType(typeB, Codec.STRING);
+        env.registerType("list", listBareType);
+        env.registerCodecForParameterisedType(listBareType, paramed -> env.rawCodecForType(paramed.parameters.get(0)));
+        env.registerType("any", anyType);
+        env.registerFunction(headFunction);
+        {
+            var spec = new EvaluationContext.Spec(Map.of("my_var", typeA));
+            var codec = env.expressionCodecForType(anyType, spec);
+            var programStr = "{\"function\":\"head\",\"list\": [],\"fallback\":3.0}"; //fixme why is this not preserving order in the list
+            var res = codec.decode(JsonOps.INSTANCE, JsonParser.parseString(programStr));
+            Assertions.assertTrue(res.result().isPresent());
+            var resProg = res.result().get().getFirst();
+            var resolvedExpr = resProg.resolveTypes(env, spec);
+            Assertions.assertTrue(resolvedExpr.result().isPresent());
+            Assertions.assertEquals(3, resolvedExpr.result().get().evaluate(EvaluationContext.builder(spec).addVariable("my_var", new VValue(typeA, 5.0)).build()).value());
+        }
+    }
+
 
     @Test
     public void testSerialiseFunctionApplicationWithListConstruction() {
