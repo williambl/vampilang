@@ -269,6 +269,14 @@ public sealed interface VExpression {
                 return DataResult.error(() -> "No list type in environment!");
             }
 
+            if (this.entries.isEmpty()) {
+                return this.resolvedType != null
+                        ? (this.resolvedType.bareType.equals(listType.bareType)
+                                ? DataResult.success(this)
+                                : DataResult.error(() -> "List has non-list resolved type! (type: %s. list<> type: %s)".formatted(this.resolvedType, listType)))
+                        : DataResult.error(() -> "Empty list has no set type!"); //todo should this just return plain list type?
+            }
+
             return VExpression.bubbleUp(this.entries.stream().map(e -> e.resolveTypes(env, spec))).map(Stream::toList).flatMap(resolvedEntries -> {
                 if (resolvedEntries.isEmpty()) {
                     return DataResult.success(new ListConstruction(listType, resolvedEntries));
