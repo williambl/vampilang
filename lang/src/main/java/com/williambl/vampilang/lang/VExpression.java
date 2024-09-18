@@ -19,12 +19,24 @@ public sealed interface VExpression {
         return new FunctionApplication(function, null, inputs);
     }
 
+    public static VExpression app(VFunctionDefinition function, Map<String, VExpression> inputs) {
+        return functionApplication(function, inputs);
+    }
+
     public static VExpression value(VType type, Object value) {
         return new Value(new VValue(type, value));
     }
 
+    public static VExpression val(VType type, Object value) {
+        return value(type, value);
+    }
+
     public static VExpression variable(String name) {
         return new VariableRef(name, null);
+    }
+
+    public static VExpression var(String name) {
+        return variable(name);
     }
 
     static VExpression object(String typeName, Map<String, VExpression> properties) {
