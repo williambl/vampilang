@@ -19,7 +19,7 @@ public final class LogicVFunctions {
         return new VFunctionDefinition(
                 name,
                 new VFunctionSignature(Map.of("a", StandardVTypes.BOOLEAN, "b", StandardVTypes.BOOLEAN), StandardVTypes.BOOLEAN),
-                (ctx, sig, args) -> new VValue(sig.outputType(), operator.apply(args.get("a").get(StandardVTypes.BOOLEAN), args.get("b").get(StandardVTypes.BOOLEAN))));
+                (ctx, sig, args) -> VValue.value(sig.outputType(), operator.apply(args.get("a").get(StandardVTypes.BOOLEAN), args.get("b").get(StandardVTypes.BOOLEAN)), ctx.env()));
     }
 
     @SuppressWarnings("unchecked")
@@ -27,14 +27,14 @@ public final class LogicVFunctions {
         return new VFunctionDefinition(
                 name,
                 new VFunctionSignature(Map.of("operands", StandardVTypes.LIST.with(0, StandardVTypes.BOOLEAN)), StandardVTypes.BOOLEAN),
-                (ctx, sig, args) -> new VValue(sig.outputType(), operator.apply(((List<VValue>) args.get("operands").value()).stream().map(v -> v.get(StandardVTypes.BOOLEAN)))));
+                (ctx, sig, args) -> VValue.value(sig.outputType(), operator.apply(((List<VValue>) args.get("operands").value()).stream().map(v -> v.get(StandardVTypes.BOOLEAN))), ctx.env()));
     }
 
     public static VFunctionDefinition fromUnaryOperator(String name, UnaryOperator<Boolean> operator) {
         return new VFunctionDefinition(
                 name,
                 new VFunctionSignature(Map.of("operand", StandardVTypes.BOOLEAN), StandardVTypes.BOOLEAN),
-                (ctx, sig, args) -> new VValue(sig.outputType(), operator.apply(args.get("operand").get(StandardVTypes.BOOLEAN))));
+                (ctx, sig, args) -> VValue.value(sig.outputType(), operator.apply(args.get("operand").get(StandardVTypes.BOOLEAN)), ctx.env()));
     }
 
     public static void register(VEnvironment env) {

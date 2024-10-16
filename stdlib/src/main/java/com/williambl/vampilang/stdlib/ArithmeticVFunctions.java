@@ -49,21 +49,21 @@ public final class ArithmeticVFunctions {
                     result += coefficients.get(i) * Math.pow(input, i);
                 }
 
-                return new VValue(sig.outputType(), result);
+                return VValue.value(sig.outputType(), result, ctx.env());
             });
 
     public static VFunctionDefinition fromBinaryOperator(String name, DoubleBinaryOperator operator) {
         return new VFunctionDefinition(
                 name,
                 new VFunctionSignature(Map.of("a", StandardVTypes.NUMBER, "b", StandardVTypes.NUMBER), StandardVTypes.NUMBER),
-                (ctx, sig, args) -> new VValue(sig.outputType(), operator.applyAsDouble(args.get("a").get(StandardVTypes.NUMBER), args.get("b").get(StandardVTypes.NUMBER))));
+                (ctx, sig, args) -> VValue.value(sig.outputType(), operator.applyAsDouble(args.get("a").get(StandardVTypes.NUMBER), args.get("b").get(StandardVTypes.NUMBER)), ctx.env()));
     }
 
     public static VFunctionDefinition fromUnaryOperator(String name, DoubleUnaryOperator operator) {
         return new VFunctionDefinition(
                 name,
                 new VFunctionSignature(Map.of("operand", StandardVTypes.NUMBER), StandardVTypes.NUMBER),
-                (ctx, sig, args) -> new VValue(sig.outputType(), operator.applyAsDouble((Double) args.get("operand").value())));
+                (ctx, sig, args) -> VValue.value(sig.outputType(), operator.applyAsDouble((Double) args.get("operand").value()), ctx.env()));
     }
 
     public static void register(VEnvironment env) {

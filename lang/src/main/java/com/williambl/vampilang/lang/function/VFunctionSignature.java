@@ -2,6 +2,7 @@ package com.williambl.vampilang.lang.function;
 
 import com.mojang.serialization.DataResult;
 import com.williambl.vampilang.lang.TypeNamer;
+import com.williambl.vampilang.lang.VEnvironment;
 import com.williambl.vampilang.lang.type.VParameterisedType;
 import com.williambl.vampilang.lang.type.VType;
 
@@ -22,16 +23,16 @@ public record VFunctionSignature(Map<String, VType> inputTypes, VType outputType
                         .collect(Collectors.toMap(Map.Entry::getKey, kv -> uniquisedTemplates.get(kv.getValue()))), uniquisedTemplates.get(this.outputType));
     }
 
-    public DataResult<VFunctionSignature> resolveTypes(Map<String, VType> actualInputs) {
+    public DataResult<VFunctionSignature> resolveTypes(VEnvironment env, Map<String, VType> actualInputs) {
         var resolvedTemplates = new HashMap<VType, Set<VType>>();
         for (var key : this.inputTypes.keySet()) {
             var inputType = this.inputTypes.get(key);
             var actualInputType = actualInputs.get(key);
-            if (!inputType.contains(actualInputType)) {
+            if (!inputType.contains(actualInputType, env)) {
                 return DataResult.error(() -> "cannot reconcile %s and %s".formatted(inputType, actualInputs));
             }
 
-            recursivelyResolveTypes(resolvedTemplates, inputType, actualInputType);
+            recursivelyResolveTypes(env, resolvedTemplates, inputType, actualInputType);
         }
 
         var errors = new ArrayList<String>();
@@ -44,11 +45,11 @@ public record VFunctionSignature(Map<String, VType> inputTypes, VType outputType
                     continue;
                 }
 
-                if (mostGeneral.contains(type)) {
+                if (mostGeneral.contains(type, env)) {
                     continue;
                 }
 
-                if (type.contains(mostGeneral)) {
+                if (type.contains(mostGeneral, env)) {
                     mostGeneral = type;
                     continue;
                 }
@@ -88,8 +89,8 @@ public record VFunctionSignature(Map<String, VType> inputTypes, VType outputType
         return input;
     }
 
-    private static void recursivelyResolveTypes(Map<VType, Set<VType>> resolvedTemplates, VType input, VType actual) {
-        if (!actual.contains(input)) { // if actual input type is more specific
+    private static void recursivelyResolveTypes(VEnvironment env, Map<VType, Set<VType>> resolvedTemplates, VType input, VType actual) {
+        if (!actual.contains(input, env)) { // if actual input type is more specific
             resolvedTemplates.compute(input, (i, s) -> {
                 var res = s == null ? new HashSet<VType>() : s;
                 res.add(actual);
@@ -104,7 +105,7 @@ public record VFunctionSignature(Map<String, VType> inputTypes, VType outputType
                 for (int i = 0; i < paramed.parameters.size(); i++) {
                     var inputParam = paramed.parameters.get(i);
                     var actualParam = actualParamed.parameters.get(i);
-                    recursivelyResolveTypes(resolvedTemplates, inputParam, actualParam);
+                    recursivelyResolveTypes(env, resolvedTemplates, inputParam, actualParam);
                 }
             }
         }

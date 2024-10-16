@@ -3,7 +3,9 @@ package com.williambl.vampilang.lang.type;
 import com.google.common.reflect.TypeToken;
 import com.williambl.vampilang.lang.EvaluationContext;
 import com.williambl.vampilang.lang.TypeNamer;
+import com.williambl.vampilang.lang.VEnvironment;
 import com.williambl.vampilang.lang.VValue;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.HashMap;
 import java.util.List;
@@ -15,9 +17,9 @@ import java.util.function.Predicate;
 public sealed interface VType permits SimpleVType, VParameterisedType, VTemplateType {
     VType uniquise(HashMap<VType, VType> uniquisedTemplates);
 
-    boolean contains(VType other);
+    boolean contains(VType other, VEnvironment env);
 
-    boolean accepts(Object value);
+    boolean accepts(Object value, VEnvironment env);
 
     default String toString(TypeNamer ctx) {
         return ctx.name(this);
@@ -39,16 +41,20 @@ public sealed interface VType permits SimpleVType, VParameterisedType, VTemplate
         return new SimpleVType(predicate);
     }
 
-    static VTemplateType createTemplate() {
-        return new VTemplateType(null);
+    static VFixedTemplateType createTemplate() {
+        return new VFixedTemplateType(Set.of());
     }
 
-    static VTemplateType createTemplate(VType... bounds) {
-        return new VTemplateType(Set.of(bounds));
+    static VFixedTemplateType createTemplate(VType... bounds) {
+        return new VFixedTemplateType(Set.of(bounds));
+    }
+
+    static VDynamicTemplateType createDynamicTemplate(@NotNull Predicate<VType> predicate) {
+        return new VDynamicTemplateType(predicate);
     }
 
     static VParameterisedType createParameterised(VType bare, VType... typeParams) {
-        return new VParameterisedType(bare, List.of(typeParams), (t, o) -> bare.accepts(o));
+        return new VParameterisedType(bare, List.of(typeParams), env -> (t, o) -> bare.accepts(o, env));
     }
 
     static LambdaVType createLambda(VType bare, VType resultType, List<VType> paramedInputTypes, Function<LambdaVType, EvaluationContext.Spec> specFunction) {

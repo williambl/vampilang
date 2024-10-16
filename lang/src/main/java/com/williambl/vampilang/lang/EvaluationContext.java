@@ -1,6 +1,7 @@
 package com.williambl.vampilang.lang;
 
 import com.williambl.vampilang.lang.type.VType;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.annotations.Unmodifiable;
 
@@ -11,18 +12,20 @@ import java.util.Objects;
 
 public class EvaluationContext {
     private final @Unmodifiable Map<String, VValue> variables;
+    private final @NotNull VEnvironment env;
 
-    public EvaluationContext(@Unmodifiable Map<String, VValue> variables) {
+    public EvaluationContext(@Unmodifiable Map<String, VValue> variables, @NotNull VEnvironment env) {
         this.variables = variables;
+        this.env = env;
     }
 
-    public EvaluationContext() {
-        this(Map.of());
+    public EvaluationContext(@NotNull VEnvironment env) {
+        this(Map.of(), env);
     }
 
     public VValue getVariable(String name, VType type) {
         var variable = this.variables.get(name);
-        if (variable == null || !type.contains(variable.type())) {
+        if (variable == null || !type.contains(variable.type(), this.env)) {
             throw new NoSuchElementException("No such variable of name %s and type %s".formatted(name, type));
         }
 
@@ -32,7 +35,7 @@ public class EvaluationContext {
     public EvaluationContext with(String name, VValue variable) {
         var newVars = new HashMap<>(this.variables);
         newVars.put(name, variable);
-        return new EvaluationContext(newVars);
+        return new EvaluationContext(newVars, this.env);
     }
 
     @Override
@@ -50,6 +53,10 @@ public class EvaluationContext {
 
     public static Builder builder(Spec spec) {
         return new Builder(spec);
+    }
+
+    public VEnvironment env() {
+        return this.env;
     }
 
     public static class Spec {
@@ -109,15 +116,15 @@ public class EvaluationContext {
             return this;
         }
 
-        public EvaluationContext build() {
+        public EvaluationContext build(VEnvironment env) {
             for (var variable : this.spec.variableTypes.entrySet()) {
                 var value = this.variables.get(variable.getKey());
-                if (value == null || !variable.getValue().contains(value.type())) {
+                if (value == null || !variable.getValue().contains(value.type(), env)) {
                     throw new IllegalStateException("Evaluation Context missing variable %s of type %s".formatted(variable.getKey(), variable.getValue()));
                 }
             }
 
-            return new EvaluationContext(Map.copyOf(this.variables));
+            return new EvaluationContext(Map.copyOf(this.variables), env);
         }
     }
 }

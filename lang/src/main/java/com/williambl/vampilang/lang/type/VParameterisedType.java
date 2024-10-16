@@ -1,20 +1,22 @@
 package com.williambl.vampilang.lang.type;
 
 import com.williambl.vampilang.lang.TypeNamer;
+import com.williambl.vampilang.lang.VEnvironment;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.BiPredicate;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public sealed class VParameterisedType implements VType permits LambdaVType {
     public final VType bareType;
     public final List<VType> parameters;
-    private final BiPredicate<VParameterisedType, Object> predicate;
+    private final Function<VEnvironment, BiPredicate<VParameterisedType, Object>> predicate;
 
-    VParameterisedType(VType bareType, List<VType> parameters, BiPredicate<VParameterisedType, Object> predicate) {
+    VParameterisedType(VType bareType, List<VType> parameters, Function<VEnvironment, BiPredicate<VParameterisedType, Object>> predicate) {
         this.bareType = bareType;
         this.parameters = parameters;
         this.predicate = predicate;
@@ -27,20 +29,20 @@ public sealed class VParameterisedType implements VType permits LambdaVType {
                 uniquisedTemplates.put(type, type.uniquise(uniquisedTemplates));
             }
         }
-        return new VParameterisedType(this.bareType, this.parameters.stream().map(uniquisedTemplates::get).toList(), predicate);
+        return new VParameterisedType(this.bareType, this.parameters.stream().map(uniquisedTemplates::get).toList(), this.predicate);
     }
 
     @Override
-    public boolean contains(VType other) {
+    public boolean contains(VType other, VEnvironment env) {
         return this.equals(other) || (other instanceof VParameterisedType paramed
                 && paramed.bareType.equals(this.bareType)
                 && (paramed.parameters.equals(this.parameters)
-                || (paramed.parameters.size() == this.parameters.size() && checkBiPredicateOnLists(this.parameters, paramed.parameters, VType::contains))));
+                || (paramed.parameters.size() == this.parameters.size() && checkBiPredicateOnLists(this.parameters, paramed.parameters, (vType, other1) -> vType.contains(other1, env)))));
     }
 
     @Override
-    public boolean accepts(Object value) {
-        return this.predicate.test(this, value);
+    public boolean accepts(Object value, VEnvironment env) {
+        return this.predicate.apply(env).test(this, value);
     }
 
     private static <A, B> boolean checkBiPredicateOnLists(List<A> a, List<B> b, BiPredicate<A, B> predicate) {
@@ -65,11 +67,11 @@ public sealed class VParameterisedType implements VType permits LambdaVType {
     public VParameterisedType with(int index, VType type) {
         var newParams = new ArrayList<>(this.parameters);
         newParams.set(index, type);
-        return new VParameterisedType(this.bareType, newParams, predicate);
+        return new VParameterisedType(this.bareType, newParams, this.predicate);
     }
 
     public VType with(List<VType> assignment) {
-        return new VParameterisedType(this.bareType, assignment, predicate);
+        return new VParameterisedType(this.bareType, assignment, this.predicate);
     }
 
     @Override

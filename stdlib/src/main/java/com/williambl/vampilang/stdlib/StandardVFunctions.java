@@ -30,7 +30,7 @@ public class StandardVFunctions {
                 Object input = args.get("input").value();
                 List<Map.Entry<Object, Object>> cases = args.get("cases").getUnchecked();
                 Object defaultVal = args.get("default").value();
-                return new VValue(sig.outputType(), cases.stream().filter(kase -> Objects.equals(kase.getKey(), input)).map(Map.Entry::getValue).findFirst().orElse(defaultVal));
+                return VValue.value(sig.outputType(), cases.stream().filter(kase -> Objects.equals(kase.getKey(), input)).map(Map.Entry::getValue).findFirst().orElse(defaultVal), ctx.env());
             });
 
     public static final VFunctionDefinition EQUALS = createComparison("==", Objects::equals);
@@ -52,8 +52,8 @@ public class StandardVFunctions {
                     var optContainingType = ((VParameterisedType) sig.inputTypes().get("optional")).parameters.get(0);
                     Optional<Object> opt = args.get("optional").getUnchecked();
                     VExpression mapping = args.get("mapping").getUnchecked();
-                    Optional<Object> res = opt.map(o -> mapping.evaluate(ctx.with("unwrapped_optional", new VValue(optContainingType, o))).value());
-                    return new VValue(sig.outputType(), res);
+                    Optional<Object> res = opt.map(o -> mapping.evaluate(ctx.with("unwrapped_optional", VValue.value(optContainingType, o, ctx.env()))).value());
+                    return VValue.value(sig.outputType(), res, ctx.env());
                 });
     });
 
@@ -66,7 +66,7 @@ public class StandardVFunctions {
                 ), type),
                 (ctx, sig, args) -> {
                     Optional<Object> opt = args.get("optional").getUnchecked();
-                    return opt.map(o -> new VValue(sig.outputType(), o)).orElseGet(() -> args.get("fallback"));
+                    return opt.map(o -> VValue.value(sig.outputType(), o, ctx.env())).orElseGet(() -> args.get("fallback"));
                 });
     });
 
@@ -78,7 +78,7 @@ public class StandardVFunctions {
                 new VFunctionSignature(
                         Map.of("a", StandardVTypes.NUMBER, "b", StandardVTypes.NUMBER),
                         StandardVTypes.BOOLEAN),
-                (ctx, sig, args) -> new VValue(sig.outputType(), predicate.test(args.get("a").getUnchecked(), args.get("b").getUnchecked())));
+                (ctx, sig, args) -> VValue.value(sig.outputType(), predicate.test(args.get("a").getUnchecked(), args.get("b").getUnchecked()), ctx.env()));
     }
 
     private static VFunctionDefinition createComparison(String name, BiPredicate<Object, Object> predicate) {
@@ -86,7 +86,7 @@ public class StandardVFunctions {
                 new VFunctionSignature(
                         Map.of("a", StandardVTypes.TEMPLATE_ANY.uniquise(new HashMap<>()), "b", StandardVTypes.TEMPLATE_ANY),
                         StandardVTypes.BOOLEAN),
-                (ctx, sig, args) -> new VValue(sig.outputType(), predicate.test(args.get("a").getUnchecked(), args.get("b").getUnchecked())));
+                (ctx, sig, args) -> VValue.value(sig.outputType(), predicate.test(args.get("a").getUnchecked(), args.get("b").getUnchecked()), ctx.env()));
     }
 
     private static VFunctionDefinition create(Supplier<VFunctionDefinition> sup) {

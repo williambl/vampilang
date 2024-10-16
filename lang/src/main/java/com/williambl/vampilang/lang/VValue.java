@@ -7,10 +7,13 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 
 public record VValue(VType type, Object value) {
-    public VValue(VType type, Object value) {
-        this.type = type;
-        this.value = value;
-        if (!this.type.accepts(this.value)) {
+    public static <T> VValue value(VType type, T obj, VEnvironment env) {
+        return new VValue(type, obj, env);
+    }
+
+    public VValue(VType type, Object value, VEnvironment env) {
+        this(type, value);
+        if (!this.type.accepts(this.value, env)) {
             throw new IllegalArgumentException("Type %s does not accept value %s!".formatted(this.type, this.value));
         }
     }

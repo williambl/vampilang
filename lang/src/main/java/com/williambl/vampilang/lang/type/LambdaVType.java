@@ -16,12 +16,14 @@ public final class LambdaVType extends VParameterisedType {
     private final Function<LambdaVType, EvaluationContext.Spec> specFunction;
 
     LambdaVType(VType bareType, VType resultType, List<VType> paramedInputTypes, Function<LambdaVType, EvaluationContext.Spec> specFunction) {
-        super(bareType, Stream.concat(Stream.of(resultType), paramedInputTypes.stream()).toList(), (p, o) -> o instanceof VExpression x && Objects.equals(p.parameters.get(0), x.type()));
+        super(bareType,
+                Stream.concat(Stream.of(resultType), paramedInputTypes.stream()).toList(),
+                env -> (p, o) -> o instanceof VExpression x && Objects.equals(p.parameters.get(0), x.type()));
         this.specFunction = specFunction;
     }
 
     LambdaVType(VType bareType, List<VType> params, Function<LambdaVType, EvaluationContext.Spec> specFunction) {
-        super(bareType, params, (p, o) -> o instanceof VExpression x && Objects.equals(p.parameters.get(0), x.type()));
+        super(bareType, params, env -> (p, o) -> o instanceof VExpression x && Objects.equals(p.parameters.get(0), x.type()));
         this.specFunction = specFunction;
     }
 

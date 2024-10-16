@@ -50,7 +50,7 @@ public class LogicVFunctionsTest {
         for (var test : cases) {
             var expr = VExpression.functionApplication(function, Map.of("a", VExpression.value(StandardVTypes.BOOLEAN, test.a()), "b", VExpression.value(StandardVTypes.BOOLEAN, test.b()))).resolveTypes(ENV, new EvaluationContext.Spec()).result();
             Assertions.assertTrue(expr.isPresent());
-            var res = expr.get().evaluate(new EvaluationContext());
+            var res = expr.get().evaluate(new EvaluationContext(ENV));
             Assertions.assertEquals(StandardVTypes.BOOLEAN, res.type());
             Assertions.assertEquals(test.res(), res.value());
         }
@@ -60,7 +60,7 @@ public class LogicVFunctionsTest {
         for (var test : cases) {
             var expr = VExpression.functionApplication(function, Map.of("operands", VExpression.list(test.inputs().stream().map(b -> VExpression.value(StandardVTypes.BOOLEAN, b)).toList()))).resolveTypes(ENV, new EvaluationContext.Spec()).result();
             Assertions.assertTrue(expr.isPresent());
-            var res = expr.get().evaluate(new EvaluationContext());
+            var res = expr.get().evaluate(new EvaluationContext(ENV));
             Assertions.assertEquals(StandardVTypes.BOOLEAN, res.type());
             Assertions.assertEquals(test.res(), res.value());
         }
@@ -70,7 +70,7 @@ public class LogicVFunctionsTest {
         for (var test : cases) {
             var expr = VExpression.functionApplication(function, Map.of("operand", VExpression.value(StandardVTypes.BOOLEAN, test.operand()))).resolveTypes(ENV, new EvaluationContext.Spec()).result();
             Assertions.assertTrue(expr.isPresent());
-            var res = expr.get().evaluate(new EvaluationContext());
+            var res = expr.get().evaluate(new EvaluationContext(ENV));
             Assertions.assertEquals(StandardVTypes.BOOLEAN, res.type());
             Assertions.assertEquals(test.res(), res.value());
         }

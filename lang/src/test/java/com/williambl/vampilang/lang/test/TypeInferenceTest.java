@@ -1,8 +1,9 @@
 package com.williambl.vampilang.lang.test;
 
 import com.williambl.vampilang.lang.TypeNamer;
+import com.williambl.vampilang.lang.VEnvironmentImpl;
 import com.williambl.vampilang.lang.function.VFunctionSignature;
-import com.williambl.vampilang.lang.type.VTemplateType;
+import com.williambl.vampilang.lang.type.VFixedTemplateType;
 import com.williambl.vampilang.lang.type.VType;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
@@ -15,10 +16,10 @@ public class TypeInferenceTest {
         var templateType = VType.createTemplate();
         var identityFunctionSignature = new VFunctionSignature(Map.of("x", templateType), templateType);
         var concreteType = VType.create();
-        var resolvedFunctionSignature = identityFunctionSignature.resolveTypes(Map.of("x", concreteType)).result();
+        var resolvedFunctionSignature = identityFunctionSignature.resolveTypes(new VEnvironmentImpl(), Map.of("x", concreteType)).result();
         Assertions.assertTrue(resolvedFunctionSignature.isPresent());
-        Assertions.assertFalse(resolvedFunctionSignature.get().inputTypes().get("x") instanceof VTemplateType);
-        Assertions.assertFalse(resolvedFunctionSignature.get().outputType() instanceof VTemplateType);
+        Assertions.assertFalse(resolvedFunctionSignature.get().inputTypes().get("x") instanceof VFixedTemplateType);
+        Assertions.assertFalse(resolvedFunctionSignature.get().outputType() instanceof VFixedTemplateType);
         Assertions.assertEquals(concreteType, resolvedFunctionSignature.get().inputTypes().get("x"));
         Assertions.assertEquals(concreteType, resolvedFunctionSignature.get().outputType());
     }
@@ -30,7 +31,7 @@ public class TypeInferenceTest {
         var concreteTypeA = VType.create();
         var concreteTypeB = VType.create();
         var aOrBType = VType.createTemplate(concreteTypeA, concreteTypeB);
-        var resolvedFunctionSignature = functionSignature.resolveTypes(Map.of("a", concreteTypeA, "b", aOrBType)).result();
+        var resolvedFunctionSignature = functionSignature.resolveTypes(new VEnvironmentImpl(), Map.of("a", concreteTypeA, "b", aOrBType)).result();
         Assertions.assertTrue(resolvedFunctionSignature.isPresent());
         Assertions.assertEquals(aOrBType, resolvedFunctionSignature.get().inputTypes().get("a"));
         Assertions.assertEquals(aOrBType, resolvedFunctionSignature.get().inputTypes().get("b"));
@@ -43,7 +44,7 @@ public class TypeInferenceTest {
         var functionSignature = new VFunctionSignature(Map.of("a", templateType, "b", templateType), templateType);
         var concreteTypeA = VType.create();
         var concreteTypeB = VType.create();
-        Assertions.assertFalse(functionSignature.resolveTypes(Map.of("a", concreteTypeA, "b", concreteTypeB)).result().isPresent());
+        Assertions.assertFalse(functionSignature.resolveTypes(new VEnvironmentImpl(), Map.of("a", concreteTypeA, "b", concreteTypeB)).result().isPresent());
     }
 
     @Test
@@ -58,7 +59,7 @@ public class TypeInferenceTest {
         var aType = VType.create();    // A
         ctx.addName(aType, "A");
         var aListType = listType.with(0, aType);    // List<A>
-        var resolvedFunctionSignature = functionSignature.resolveTypes(Map.of("a", aListType)).result();
+        var resolvedFunctionSignature = functionSignature.resolveTypes(new VEnvironmentImpl(), Map.of("a", aListType)).result();
         Assertions.assertTrue(resolvedFunctionSignature.isPresent());
         Assertions.assertEquals(aListType, resolvedFunctionSignature.get().inputTypes().get("a"));
         Assertions.assertEquals(aType, resolvedFunctionSignature.get().outputType());

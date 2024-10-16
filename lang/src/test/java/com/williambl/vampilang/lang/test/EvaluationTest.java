@@ -22,8 +22,8 @@ public class EvaluationTest {
         var numType = VType.createTemplate(intType, doubleType);
         var boolType = VType.create();
         var anyType = VType.createTemplate();
-        var addFunction = new VFunctionDefinition("add", new VFunctionSignature(Map.of("a", numType, "b", numType), numType), (ctx, sig, a) -> new VValue(sig.outputType(), ((Number) a.get("a").value()).doubleValue() + ((Number) a.get("b").value()).doubleValue()));
-        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> new VValue(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value()));
+        var addFunction = new VFunctionDefinition("add", new VFunctionSignature(Map.of("a", numType, "b", numType), numType), (ctx, sig, a) -> VValue.value(sig.outputType(), ((Number) a.get("a").value()).doubleValue() + ((Number) a.get("b").value()).doubleValue(), ctx.env()));
+        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> VValue.value(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value(), ctx.env()));
         var env = new VEnvironmentImpl();
         env.registerType("int", intType);
         env.registerType("double", doubleType);
@@ -40,7 +40,7 @@ public class EvaluationTest {
                 "b", VExpression.value(intType, 25)));
         var resolved = program.resolveTypes(env, new EvaluationContext.Spec()).result();
         Assertions.assertTrue(resolved.isPresent());
-        var result = Assertions.assertDoesNotThrow(() -> resolved.get().evaluate(new EvaluationContext()));
+        var result = Assertions.assertDoesNotThrow(() -> resolved.get().evaluate(new EvaluationContext(env)));
         Assertions.assertEquals(intType, result.type());
         Assertions.assertEquals(15, ((Number) result.value()).intValue());
     }
@@ -52,8 +52,8 @@ public class EvaluationTest {
         var numType = VType.createTemplate(intType, doubleType);
         var boolType = VType.create();
         var anyType = VType.createTemplate();
-        var addFunction = new VFunctionDefinition("add", new VFunctionSignature(Map.of("a", numType, "b", numType), numType), (ctx, sig, a) -> new VValue(sig.outputType(), ((Number) a.get("a").value()).doubleValue() + ((Number) a.get("b").value()).doubleValue()));
-        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> new VValue(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value()));
+        var addFunction = new VFunctionDefinition("add", new VFunctionSignature(Map.of("a", numType, "b", numType), numType), (ctx, sig, a) -> VValue.value(sig.outputType(), ((Number) a.get("a").value()).doubleValue() + ((Number) a.get("b").value()).doubleValue(), ctx.env()));
+        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> VValue.value(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value(), ctx.env()));
         var env = new VEnvironmentImpl();
         env.registerType("int", intType);
         env.registerType("double", doubleType);
@@ -73,7 +73,7 @@ public class EvaluationTest {
                 "b", VExpression.value(intType, 25)));
         var resolved = program.resolveTypes(env, new EvaluationContext.Spec()).result();
         Assertions.assertTrue(resolved.isPresent());
-        var result = Assertions.assertDoesNotThrow(() -> resolved.get().evaluate(new EvaluationContext()));
+        var result = Assertions.assertDoesNotThrow(() -> resolved.get().evaluate(new EvaluationContext(env)));
         Assertions.assertEquals(intType, result.type());
         Assertions.assertEquals(15, ((Number) result.value()).intValue());
     }
@@ -85,8 +85,8 @@ public class EvaluationTest {
         var numType = VType.createTemplate(intType, doubleType);
         var boolType = VType.create();
         var anyType = VType.createTemplate();
-        var addFunction = new VFunctionDefinition("add", new VFunctionSignature(Map.of("a", numType, "b", numType), numType), (ctx, sig, a) -> new VValue(sig.outputType(), ((Number) a.get("a").value()).doubleValue() + ((Number) a.get("b").value()).doubleValue()));
-        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> new VValue(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value()));
+        var addFunction = new VFunctionDefinition("add", new VFunctionSignature(Map.of("a", numType, "b", numType), numType), (ctx, sig, a) -> VValue.value(sig.outputType(), ((Number) a.get("a").value()).doubleValue() + ((Number) a.get("b").value()).doubleValue(), ctx.env()));
+        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> VValue.value(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value(), ctx.env()));
         var env = new VEnvironmentImpl();
         env.registerType("int", intType);
         env.registerType("double", doubleType);
@@ -117,8 +117,8 @@ public class EvaluationTest {
         var numType = VType.createTemplate(intType, doubleType);
         var boolType = VType.create();
         var anyType = VType.createTemplate();
-        var addFunction = new VFunctionDefinition("add", new VFunctionSignature(Map.of("a", numType, "b", numType), numType), (ctx, sig, a) -> new VValue(sig.outputType(), ((Number) a.get("a").value()).doubleValue() + ((Number) a.get("b").value()).doubleValue()));
-        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> new VValue(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value()));
+        var addFunction = new VFunctionDefinition("add", new VFunctionSignature(Map.of("a", numType, "b", numType), numType), (ctx, sig, a) -> VValue.value(sig.outputType(), ((Number) a.get("a").value()).doubleValue() + ((Number) a.get("b").value()).doubleValue(), ctx.env()));
+        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> VValue.value(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value(), ctx.env()));
         var evaluationSpec = new EvaluationContext.Spec(Map.of("var1", intType, "var2", intType));
         var env = new VEnvironmentImpl();
         env.registerType("int", intType);
@@ -136,7 +136,7 @@ public class EvaluationTest {
                 "b", VExpression.variable("var1")));
         var resolved = program.resolveTypes(env, evaluationSpec).result();
         Assertions.assertTrue(resolved.isPresent());
-        var result = Assertions.assertDoesNotThrow(() -> resolved.get().evaluate(EvaluationContext.builder(evaluationSpec).addVariable("var1", new VValue(intType, 5)).addVariable("var2", new VValue(intType, 10)).build()));
+        var result = Assertions.assertDoesNotThrow(() -> resolved.get().evaluate(EvaluationContext.builder(evaluationSpec).addVariable("var1", VValue.value(intType, 5, env)).addVariable("var2", VValue.value(intType, 10, env)).build(env)));
         Assertions.assertEquals(intType, result.type());
         Assertions.assertEquals(15, ((Number) result.value()).intValue());
     }
@@ -171,8 +171,8 @@ public class EvaluationTest {
         var boolType = VType.create();
         var mySpecialType = VType.create(TypeToken.of(MySpecialObject.class), Map.of("a", intType, "b", intType), map -> new MySpecialObject(map.get("a").<Number>getUnchecked().intValue(), map.get("b").<Number>getUnchecked().intValue()));
         var anyType = VType.createTemplate();
-        var addFunction = new VFunctionDefinition("add", new VFunctionSignature(Map.of("a", numType, "b", numType), numType), (ctx, sig, a) -> new VValue(sig.outputType(), ((Number) a.get("a").value()).doubleValue() + ((Number) a.get("b").value()).doubleValue()));
-        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> new VValue(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value()));
+        var addFunction = new VFunctionDefinition("add", new VFunctionSignature(Map.of("a", numType, "b", numType), numType), (ctx, sig, a) -> VValue.value(sig.outputType(), ((Number) a.get("a").value()).doubleValue() + ((Number) a.get("b").value()).doubleValue(), ctx.env()));
+        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> VValue.value(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value(), ctx.env()));
         var evaluationSpec = new EvaluationContext.Spec(Map.of("var1", intType, "var2", intType));
         var env = new VEnvironmentImpl();
         env.registerType("int", intType);
@@ -199,7 +199,7 @@ public class EvaluationTest {
                                 "b", VExpression.variable("var1")))));
         var resolved = program.resolveTypes(env, evaluationSpec).result();
         Assertions.assertTrue(resolved.isPresent());
-        var result = Assertions.assertDoesNotThrow(() -> resolved.get().evaluate(EvaluationContext.builder(evaluationSpec).addVariable("var1", new VValue(intType, 5)).addVariable("var2", new VValue(intType, 10)).build()));
+        var result = Assertions.assertDoesNotThrow(() -> resolved.get().evaluate(EvaluationContext.builder(evaluationSpec).addVariable("var1", VValue.value(intType, 5, env)).addVariable("var2", VValue.value(intType, 10, env)).build(env)));
         Assertions.assertEquals(mySpecialType, result.type());
         Assertions.assertEquals(new MySpecialObject(5 + 10, 5), result.value());
     }
@@ -226,8 +226,8 @@ public class EvaluationTest {
                 VExpression.variable("var1")));
         var resolved = program.resolveTypes(env, evaluationSpec).result();
         Assertions.assertTrue(resolved.isPresent());
-        var result = Assertions.assertDoesNotThrow(() -> resolved.get().evaluate(EvaluationContext.builder(evaluationSpec).addVariable("var1", new VValue(intType, 5)).build()));
+        var result = Assertions.assertDoesNotThrow(() -> resolved.get().evaluate(EvaluationContext.builder(evaluationSpec).addVariable("var1", VValue.value(intType, 5, env)).build(env)));
         Assertions.assertEquals(env.listType().with(0, numType), result.type());
-        Assertions.assertEquals(List.of(new VValue(intType, 3), new VValue(doubleType, 10.0), new VValue(intType, 5)), result.value());
+        Assertions.assertEquals(List.of(VValue.value(intType, 3, env), VValue.value(doubleType, 10.0, env), VValue.value(intType, 5, env)), result.value());
     }
 }

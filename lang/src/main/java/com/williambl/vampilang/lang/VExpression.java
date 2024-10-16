@@ -9,7 +9,6 @@ import com.williambl.vampilang.lang.type.VParameterisedType;
 import com.williambl.vampilang.lang.type.VType;
 import org.jetbrains.annotations.Nullable;
 
-import javax.xml.crypto.Data;
 import java.util.*;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -67,7 +66,11 @@ public sealed interface VExpression {
                     .map(kv -> kv.getValue().resolveTypes(env, spec).map(v -> Map.entry(kv.getKey(), v)))).map(s ->
                     s.collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
             return resolvedInputsRes.flatMap(resolvedInputs -> {
-                var resolvedFunctionSignature = this.function.signature().uniquise().resolveTypes(resolvedInputs.entrySet().stream().collect(Collectors.toMap(Map.Entry::getKey, kv -> kv.getValue().type())));
+                var resolvedFunctionSignature = this.function.signature()
+                        .uniquise()
+                        .resolveTypes(env, resolvedInputs.entrySet()
+                                .stream()
+                                .collect(Collectors.toMap(Map.Entry::getKey, kv -> kv.getValue().type())));
                 return resolvedFunctionSignature.map(sig -> new FunctionApplication(this.function, sig, resolvedInputs));
             });
         }
@@ -209,7 +212,7 @@ public sealed interface VExpression {
                 for (var key : expectedPropertyTypes.keySet()) {
                     var expected = expectedPropertyTypes.get(key);
                     var actual = resolvedProperties.get(key);
-                    if (actual == null || !expected.contains(actual.type())) {
+                    if (actual == null || !expected.contains(actual.type(), env)) {
                         return DataResult.error(() -> "Argument %s should be of type %s!".formatted(key, expected));
                     }
                 }
@@ -238,7 +241,7 @@ public sealed interface VExpression {
 
             var result = this.resolvedType.constructor.apply(propertiesValues);
 
-            return new VValue(this.resolvedType, result);
+            return VValue.value(this.resolvedType, result, ctx.env());
         }
 
         @Override
@@ -297,11 +300,11 @@ public sealed interface VExpression {
                 var allTypes = env.allTypes().values();
                 supertypes: for (var possibleSupertype : allTypes) {
                     for (var entry : resolvedEntries) {
-                        if (!possibleSupertype.contains(entry.type())) {
+                        if (!possibleSupertype.contains(entry.type(), env)) {
                             continue supertypes;
                         }
                     }
-                    if (mostSpecificCommonSupertype == null || mostSpecificCommonSupertype.contains(possibleSupertype)) {
+                    if (mostSpecificCommonSupertype == null || mostSpecificCommonSupertype.contains(possibleSupertype, env)) {
                         mostSpecificCommonSupertype = possibleSupertype;
                     }
                 }
@@ -326,7 +329,7 @@ public sealed interface VExpression {
         @Override
         public VValue evaluate(EvaluationContext ctx) {
             var evaluatedEntries = this.entries.stream().map(e -> e.evaluate(ctx)).toList();
-            return new VValue(this.resolvedType(), evaluatedEntries);
+            return VValue.value(this.resolvedType(), evaluatedEntries, ctx.env());
         }
 
         @Override
@@ -358,7 +361,7 @@ public sealed interface VExpression {
 
         @Override
         public VValue evaluate(EvaluationContext ctx) {
-            return new VValue(this.type, this.expr);
+            return VValue.value(this.type, this.expr, ctx.env());
         }
     }
 

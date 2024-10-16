@@ -95,7 +95,7 @@ public class ArithmeticVFunctionsTest {
             for (var test : INPUTS) {
                 var expr = VExpression.functionApplication(ArithmeticVFunctions.POLYNOMIAL, Map.of("coefficients", coefficientsExpr, "input", VExpression.value(StandardVTypes.NUMBER, test))).resolveTypes(ENV, new EvaluationContext.Spec()).result();
                 Assertions.assertTrue(expr.isPresent());
-                var res = expr.get().evaluate(new EvaluationContext());
+                var res = expr.get().evaluate(new EvaluationContext(ENV));
                 double result = 0;
                 for (int i = 0; i < coefficients.size(); i++) {
                     result += coefficients.get(i) * Math.pow(test, i);
@@ -117,7 +117,7 @@ public class ArithmeticVFunctionsTest {
         for (var test : cases) {
             var expr = VExpression.functionApplication(function, Map.of("a", VExpression.value(StandardVTypes.NUMBER, test.a()), "b", VExpression.value(StandardVTypes.NUMBER, test.b()))).resolveTypes(ENV, new EvaluationContext.Spec()).result();
             Assertions.assertTrue(expr.isPresent());
-            var res = expr.get().evaluate(new EvaluationContext());
+            var res = expr.get().evaluate(new EvaluationContext(ENV));
             Assertions.assertEquals(StandardVTypes.NUMBER, res.type());
             Assertions.assertEquals(test.res(), res.value());
         }
@@ -127,7 +127,7 @@ public class ArithmeticVFunctionsTest {
         for (var test : cases) {
             var expr = VExpression.functionApplication(function, Map.of("operand", VExpression.value(StandardVTypes.NUMBER, test.operand()))).resolveTypes(ENV, new EvaluationContext.Spec()).result();
             Assertions.assertTrue(expr.isPresent());
-            var res = expr.get().evaluate(new EvaluationContext());
+            var res = expr.get().evaluate(new EvaluationContext(ENV));
             Assertions.assertEquals(StandardVTypes.NUMBER, res.type());
             Assertions.assertEquals(test.res(), res.value());
         }

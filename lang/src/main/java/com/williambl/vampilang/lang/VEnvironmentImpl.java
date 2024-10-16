@@ -8,13 +8,12 @@ import com.williambl.vampilang.codec.*;
 import com.williambl.vampilang.lang.function.VFunctionDefinition;
 import com.williambl.vampilang.lang.type.SimpleVType;
 import com.williambl.vampilang.lang.type.VParameterisedType;
-import com.williambl.vampilang.lang.type.VTemplateType;
+import com.williambl.vampilang.lang.type.VFixedTemplateType;
 import com.williambl.vampilang.lang.type.VType;
 
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 public class VEnvironmentImpl implements VEnvironment {
     private final Map<String, VType> types = new HashMap<>();
@@ -45,7 +44,7 @@ public class VEnvironmentImpl implements VEnvironment {
 
     public Set<VType> allTypesMatching(VType type) {
         Set<VType> set = new HashSet<>();
-        if (type instanceof VTemplateType template) {
+        if (type instanceof VFixedTemplateType template) {
             if (template.bounds == null) {
                 set.addAll(this.codecs.keySet());
             } else {
@@ -73,7 +72,7 @@ public class VEnvironmentImpl implements VEnvironment {
                                 .map(DataResult::result)
                                 .filter(Optional::isPresent)
                                 .map(Optional::get)
-                                .filter(expr -> type.contains(expr.type()))
+                                .filter(expr -> type.contains(expr.type(), this))
                                 .map(DataResult::success)
                                 .findFirst()
                                 .orElse(DataResult.error(() -> "Unmatched type")),
@@ -93,7 +92,7 @@ public class VEnvironmentImpl implements VEnvironment {
                                 funcs -> funcs.stream().map(func -> DataResult.success(FunctionApplicationDecoder.createCodec(func.function(), this, spec))).findFirst().orElse(DataResult.error(() -> "No entry in list!"))).codec()
                         .comapFlatMap(fs -> Optional.of(fs.stream()
                                                 .map(f -> f.resolveTypes(this, spec)
-                                                        .flatMap(fr -> type.contains(((VExpression.FunctionApplication)fr).resolvedSignature().outputType())
+                                                        .flatMap(fr -> type.contains(((VExpression.FunctionApplication)fr).resolvedSignature().outputType(), this)
                                                                 ? DataResult.success((VExpression.FunctionApplication) fr)
                                                                 : DataResult.error(() -> "Unmatched type")))
                                                 .map(DataResult::result)
@@ -108,7 +107,7 @@ public class VEnvironmentImpl implements VEnvironment {
                 ObjectConstructionDecoder.createCodec(this, spec).comapFlatMap(os ->
                         Optional.of(os.stream()
                                 .map(o -> o.resolveTypes(this, spec)
-                                        .flatMap(or -> type.contains(or.type())
+                                        .flatMap(or -> type.contains(or.type(), this)
                                                 ? DataResult.success((VExpression.ObjectConstruction) or)
                                                 : DataResult.error(() -> "Unmatched type")))
                                         .map(DataResult::result)

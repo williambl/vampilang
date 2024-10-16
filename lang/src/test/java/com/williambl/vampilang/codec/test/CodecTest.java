@@ -28,7 +28,7 @@ public class CodecTest {
         var res = aOrBValueCodec.decode(JsonOps.INSTANCE, JsonParser.parseString("3"));
         Assertions.assertTrue(res.result().isPresent());
         var resExpr = res.result().get().getFirst();
-        Assertions.assertEquals(3, resExpr.get(0).evaluate(new EvaluationContext()).value());
+        Assertions.assertEquals(3, resExpr.get(0).evaluate(new EvaluationContext(codecRegistry)).value());
     }
 
     @Test
@@ -38,7 +38,7 @@ public class CodecTest {
         var boolType = VType.create();
         var typeAOrB = VType.createTemplate(typeA, typeB);
         var codecRegistry = new VEnvironmentImpl();
-        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", typeAOrB, "b", typeAOrB), typeAOrB), (ctx, sig, a) -> new VValue(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value()));
+        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", typeAOrB, "b", typeAOrB), typeAOrB), (ctx, sig, a) -> VValue.value(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value(), ctx.env()));
         codecRegistry.registerCodecForType(typeA, Codec.INT);
         codecRegistry.registerCodecForType(typeB, Codec.STRING);
         codecRegistry.registerCodecForType(boolType, Codec.BOOL);
@@ -50,7 +50,7 @@ public class CodecTest {
             var resExpr = res.result().get().getFirst();
             var resolvedExpr = resExpr.resolveTypes(codecRegistry, new EvaluationContext.Spec());
             Assertions.assertTrue(resolvedExpr.result().isPresent());
-            Assertions.assertEquals(3, resolvedExpr.result().get().evaluate(new EvaluationContext()).value());
+            Assertions.assertEquals(3, resolvedExpr.result().get().evaluate(new EvaluationContext(codecRegistry)).value());
         }
         {
             var codec = codecRegistry.expressionCodecForType(typeB, new EvaluationContext.Spec());
@@ -59,7 +59,7 @@ public class CodecTest {
             var resExpr = res.result().get().getFirst();
             var resolvedExpr = resExpr.resolveTypes(codecRegistry, new EvaluationContext.Spec());
             Assertions.assertTrue(resolvedExpr.result().isPresent());
-            Assertions.assertEquals("bbb", resolvedExpr.result().get().evaluate(new EvaluationContext()).value());
+            Assertions.assertEquals("bbb", resolvedExpr.result().get().evaluate(new EvaluationContext(codecRegistry)).value());
         }
     }
 
@@ -79,7 +79,7 @@ public class CodecTest {
         var res = listValueCodec.decode(JsonOps.INSTANCE, JsonParser.parseString("[3, 4, 5]"));
         Assertions.assertTrue(res.result().isPresent());
         var resExpr = res.result().get().getFirst();
-        Assertions.assertEquals(List.of(3, 4, 5), resExpr.get(0).evaluate(new EvaluationContext()).value());
+        Assertions.assertEquals(List.of(3, 4, 5), resExpr.get(0).evaluate(new EvaluationContext(codecRegistry)).value());
     }
 
     @Test
@@ -98,13 +98,13 @@ public class CodecTest {
             var res = listValueCodec.decode(JsonOps.INSTANCE, JsonParser.parseString("[3, 4, 5]"));
             Assertions.assertTrue(res.result().isPresent());
             var resExpr = res.result().get().getFirst();
-            Assertions.assertEquals(List.of(3, 4, 5), resExpr.get(0).evaluate(new EvaluationContext()).value());
+            Assertions.assertEquals(List.of(3, 4, 5), resExpr.get(0).evaluate(new EvaluationContext(codecRegistry)).value());
         }
         {
             var res = listValueCodec.decode(JsonOps.INSTANCE, JsonParser.parseString("[\"hi\", \"test\"]"));
             Assertions.assertTrue(res.result().isPresent());
             var resExpr = res.result().get().getFirst();
-            Assertions.assertEquals(List.of("hi", "test"), resExpr.get(0).evaluate(new EvaluationContext()).value());
+            Assertions.assertEquals(List.of("hi", "test"), resExpr.get(0).evaluate(new EvaluationContext(codecRegistry)).value());
         }
     }
 
@@ -115,7 +115,7 @@ public class CodecTest {
         var boolType = VType.create();
         var typeAOrB = VType.createTemplate(typeA, typeB);
         var codecRegistry = new VEnvironmentImpl();
-        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", typeAOrB, "b", typeAOrB), typeAOrB), (ctx, sig, a) -> new VValue(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value()));
+        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", typeAOrB, "b", typeAOrB), typeAOrB), (ctx, sig, a) -> VValue.value(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value(), ctx.env()));
         codecRegistry.registerCodecForType(typeA, Codec.INT);
         codecRegistry.registerCodecForType(typeB, Codec.STRING);
         codecRegistry.registerCodecForType(boolType, Codec.BOOL);
@@ -144,7 +144,7 @@ public class CodecTest {
         var aListType = listType.with(0, typeA);
         var bListType = listType.with(0, typeB);
         var codecRegistry = new VEnvironmentImpl();
-        var getFunction = new VFunctionDefinition("get", new VFunctionSignature(Map.of("index", typeA, "a", listType), typeAOrB), (ctx, sig, a) -> new VValue(sig.outputType(), ((List<?>) a.get("a").value()).get((Integer) a.get("index").value())));
+        var getFunction = new VFunctionDefinition("get", new VFunctionSignature(Map.of("index", typeA, "a", listType), typeAOrB), (ctx, sig, a) -> VValue.value(sig.outputType(), ((List<?>) a.get("a").value()).get((Integer) a.get("index").value()), ctx.env()));
         codecRegistry.registerCodecForType(typeA, Codec.INT);
         codecRegistry.registerCodecForType(typeB, Codec.STRING);
         codecRegistry.registerCodecForType(boolType, Codec.BOOL);
@@ -177,7 +177,7 @@ public class CodecTest {
             var res = codec.decode(JsonOps.INSTANCE, JsonParser.parseString("{\"var\": \"my_var\"}"));
             Assertions.assertTrue(res.result().isPresent());
             var resExpr = res.result().get().getFirst();
-            Assertions.assertEquals(3, resExpr.evaluate(EvaluationContext.builder(spec).addVariable("my_var", new VValue(typeA, 3)).build()).value());
+            Assertions.assertEquals(3, resExpr.evaluate(EvaluationContext.builder(spec).addVariable("my_var", VValue.value(typeA, 3, codecRegistry)).build(codecRegistry)).value());
         }
         {
             var spec = new EvaluationContext.Spec(Map.of("my_var", typeB));
@@ -185,7 +185,7 @@ public class CodecTest {
             var res = codec.decode(JsonOps.INSTANCE, JsonParser.parseString("{\"var\": \"my_var\"}"));
             Assertions.assertTrue(res.result().isPresent());
             var resExpr = res.result().get().getFirst();
-            Assertions.assertEquals("bbb", resExpr.evaluate(EvaluationContext.builder(spec).addVariable("my_var", new VValue(typeB, "bbb")).build()).value());
+            Assertions.assertEquals("bbb", resExpr.evaluate(EvaluationContext.builder(spec).addVariable("my_var", VValue.value(typeB, "bbb", codecRegistry)).build(codecRegistry)).value());
         }
     }
 
@@ -213,7 +213,7 @@ public class CodecTest {
         var boolType = VType.create();
         var typeAOrB = VType.createTemplate(typeA, typeB);
         var codecRegistry = new VEnvironmentImpl();
-        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", typeAOrB, "b", typeAOrB), typeAOrB), (ctx, sig, a) -> new VValue(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value()));
+        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", typeAOrB, "b", typeAOrB), typeAOrB), (ctx, sig, a) -> VValue.value(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value(), ctx.env()));
         codecRegistry.registerCodecForType(typeA, Codec.INT);
         codecRegistry.registerCodecForType(typeB, Codec.STRING);
         codecRegistry.registerCodecForType(boolType, Codec.BOOL);
@@ -226,7 +226,7 @@ public class CodecTest {
             var resExpr = res.result().get().getFirst();
             var resolvedExpr = resExpr.resolveTypes(codecRegistry, spec);
             Assertions.assertTrue(resolvedExpr.result().isPresent());
-            Assertions.assertEquals(3, resolvedExpr.result().get().evaluate(EvaluationContext.builder(spec).addVariable("my_var", new VValue(boolType, true)).build()).value());
+            Assertions.assertEquals(3, resolvedExpr.result().get().evaluate(EvaluationContext.builder(spec).addVariable("my_var", VValue.value(boolType, true, codecRegistry)).build(codecRegistry)).value());
         }
     }
 
@@ -269,7 +269,7 @@ public class CodecTest {
         var anyType = VType.createTemplate();
         var mySpecialType = VType.create(TypeToken.of(MySpecialObject.class), Map.of("a", typeAOrB, "b", typeAOrB), map -> new MySpecialObject(map.get("a").<Number>getUnchecked().intValue(), map.get("b").<Number>getUnchecked().intValue()));
         var env = new VEnvironmentImpl();
-        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> new VValue(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value()));
+        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> VValue.value(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value(), ctx.env()));
         env.registerType("a", typeA);
         env.registerCodecForType(typeA, Codec.INT);
         env.registerType("b", typeB);
@@ -343,7 +343,7 @@ public class CodecTest {
         var anyType = VType.createTemplate();
         var mySpecialType = VType.create(TypeToken.of(MySpecialObject.class), Map.of("a", typeAOrB, "b", typeAOrB), map -> new MySpecialObject(map.get("a").<Number>getUnchecked().intValue(), map.get("b").<Number>getUnchecked().intValue()));
         var env = new VEnvironmentImpl();
-        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> new VValue(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value()));
+        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> VValue.value(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value(), ctx.env()));
         env.registerType("a", typeA);
         env.registerCodecForType(typeA, Codec.INT);
         env.registerType("b", typeB);
@@ -363,7 +363,7 @@ public class CodecTest {
             var resProg = res.result().get().getFirst();
             var resolvedExpr = resProg.resolveTypes(env, spec);
             Assertions.assertTrue(resolvedExpr.result().isPresent());
-            Assertions.assertEquals(new MySpecialObject(3, 50), resolvedExpr.result().get().evaluate(EvaluationContext.builder(spec).addVariable("my_var", new VValue(boolType, true)).build()).value());
+            Assertions.assertEquals(new MySpecialObject(3, 50), resolvedExpr.result().get().evaluate(EvaluationContext.builder(spec).addVariable("my_var", VValue.value(boolType, true, env)).build(env)).value());
         }
     }
 
@@ -376,7 +376,7 @@ public class CodecTest {
         var listType = VType.createParameterised(listBareType, anyType);
         var env = new VEnvironmentImpl();
         var headFunction = new VFunctionDefinition("head", new VFunctionSignature(Map.of("list", listType, "fallback", anyType), anyType),
-                (ctx, sig, a) -> new VValue(sig.outputType(), (a.get("list").<List<VValue>>getUnchecked()).stream().map(VValue::value).findFirst().orElseGet(() -> a.get("fallback").value())));
+                (ctx, sig, a) -> VValue.value(sig.outputType(), (a.get("list").<List<VValue>>getUnchecked()).stream().map(VValue::value).findFirst().orElseGet(() -> a.get("fallback").value()), ctx.env()));
         env.registerType("a", typeA);
         env.registerCodecForType(typeA, Codec.INT);
         env.registerType("b", typeB);
@@ -394,7 +394,7 @@ public class CodecTest {
             var resProg = res.result().get().getFirst();
             var resolvedExpr = resProg.resolveTypes(env, spec);
             Assertions.assertTrue(resolvedExpr.result().isPresent());
-            Assertions.assertEquals(5.0, resolvedExpr.result().get().evaluate(EvaluationContext.builder(spec).addVariable("my_var", new VValue(typeA, 5.0)).build()).value());
+            Assertions.assertEquals(5.0, resolvedExpr.result().get().evaluate(EvaluationContext.builder(spec).addVariable("my_var", VValue.value(typeA, 5.0, env)).build(env)).value());
         }
     }
 
@@ -407,7 +407,7 @@ public class CodecTest {
         var listType = VType.createParameterised(listBareType, anyType);
         var env = new VEnvironmentImpl();
         var headFunction = new VFunctionDefinition("head", new VFunctionSignature(Map.of("list", listType, "fallback", anyType), anyType),
-                (ctx, sig, a) -> new VValue(sig.outputType(), (a.get("list").<List<VValue>>getUnchecked()).stream().map(VValue::value).findFirst().orElseGet(() -> a.get("fallback").value())));
+                (ctx, sig, a) -> VValue.value(sig.outputType(), (a.get("list").<List<VValue>>getUnchecked()).stream().map(VValue::value).findFirst().orElseGet(() -> a.get("fallback").value()), ctx.env()));
         env.registerType("a", typeA);
         env.registerCodecForType(typeA, Codec.INT);
         env.registerType("b", typeB);
@@ -425,7 +425,7 @@ public class CodecTest {
             var resProg = res.result().get().getFirst();
             var resolvedExpr = resProg.resolveTypes(env, spec);
             Assertions.assertTrue(resolvedExpr.result().isPresent());
-            Assertions.assertEquals(3, resolvedExpr.result().get().evaluate(EvaluationContext.builder(spec).addVariable("my_var", new VValue(typeA, 5.0)).build()).value());
+            Assertions.assertEquals(3, resolvedExpr.result().get().evaluate(EvaluationContext.builder(spec).addVariable("my_var", VValue.value(typeA, 5.0, env)).build(env)).value());
         }
     }
 
@@ -439,7 +439,7 @@ public class CodecTest {
         var listType = VType.createParameterised(listBareType, anyType);
         var env = new VEnvironmentImpl();
         var headFunction = new VFunctionDefinition("head", new VFunctionSignature(Map.of("list", listType, "fallback", anyType), anyType),
-                (ctx, sig, a) -> new VValue(sig.outputType(), (a.get("list").<List<VValue>>getUnchecked()).stream().map(VValue::value).findFirst().orElseGet(() -> a.get("fallback").value())));
+                (ctx, sig, a) -> VValue.value(sig.outputType(), (a.get("list").<List<VValue>>getUnchecked()).stream().map(VValue::value).findFirst().orElseGet(() -> a.get("fallback").value()), ctx.env()));
         env.registerType("a", typeA);
         env.registerCodecForType(typeA, Codec.INT);
         env.registerType("b", typeB);
@@ -470,7 +470,7 @@ public class CodecTest {
         var boolType = VType.create();
         var anyType = VType.createTemplate(intType, boolType);
         var codecRegistry = new VEnvironmentImpl();
-        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> new VValue(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value()));
+        var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> VValue.value(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value(), ctx.env()));
         codecRegistry.registerCodecForType(intType, Codec.INT);
         codecRegistry.registerCodecForType(boolType, Codec.BOOL);
         codecRegistry.registerFunction(ifElseFunction);
@@ -481,7 +481,7 @@ public class CodecTest {
             var resExpr = res.result().get().getFirst();
             var resolvedExpr = resExpr.resolveTypes(codecRegistry, new EvaluationContext.Spec());
             Assertions.assertTrue(resolvedExpr.result().isPresent());
-            Assertions.assertEquals(3, resolvedExpr.result().get().evaluate(new EvaluationContext()).value());
+            Assertions.assertEquals(3, resolvedExpr.result().get().evaluate(new EvaluationContext(codecRegistry)).value());
         }
         {
             var codec = codecRegistry.expressionCodecForType(boolType, new EvaluationContext.Spec());
@@ -490,7 +490,7 @@ public class CodecTest {
             var resExpr = res.result().get().getFirst();
             var resolvedExpr = resExpr.resolveTypes(codecRegistry, new EvaluationContext.Spec());
             Assertions.assertTrue(resolvedExpr.result().isPresent());
-            Assertions.assertEquals(true, resolvedExpr.result().get().evaluate(new EvaluationContext()).value());
+            Assertions.assertEquals(true, resolvedExpr.result().get().evaluate(new EvaluationContext(codecRegistry)).value());
         }
     }
 
@@ -505,12 +505,12 @@ public class CodecTest {
                 "optional", optionalIntType,
                 "mapping_function", intToIntType),
                 optionalIntType),
-                (ctx, sig, a) -> new VValue(sig.outputType(), a.get("optional").get(optionalIntType).stream().map(i -> a.get("mapping_function").<VExpression>getUnchecked().evaluate(ctx.with("unwrapped_optional", new VValue(intType, i))).get(intType)).findFirst()));
+                (ctx, sig, a) -> VValue.value(sig.outputType(), a.get("optional").get(optionalIntType).stream().map(i -> a.get("mapping_function").<VExpression>getUnchecked().evaluate(ctx.with("unwrapped_optional", new VValue(intType, i))).get(intType)).findFirst(), ctx.env()));
         var addFunction = new VFunctionDefinition("add", new VFunctionSignature(Map.of(
                 "a", intType,
                 "b", intType),
                 intType),
-                (ctx, sig, a) -> new VValue(sig.outputType(), a.get("a").get(intType) + a.get("b").get(intType)));
+                (ctx, sig, a) -> VValue.value(sig.outputType(), a.get("a").get(intType) + a.get("b").get(intType), ctx.env()));
         codecRegistry.registerCodecForType(intType, Codec.INT);
         codecRegistry.registerFunction(mapOptionalFunction);
         codecRegistry.registerFunction(addFunction);
@@ -522,7 +522,7 @@ public class CodecTest {
             var resExpr = res.result().get().getFirst();
             var resolvedExpr = resExpr.resolveTypes(codecRegistry, spec);
             Assertions.assertTrue(resolvedExpr.result().isPresent());
-            Assertions.assertEquals(OptionalInt.of(4), resolvedExpr.result().get().evaluate(EvaluationContext.builder(spec).addVariable("my_var", new VValue(optionalIntType, OptionalInt.of(2))).addVariable( "a", new VValue(intType, 2)).build()).value());
+            Assertions.assertEquals(OptionalInt.of(4), resolvedExpr.result().get().evaluate(EvaluationContext.builder(spec).addVariable("my_var", VValue.value(optionalIntType, OptionalInt.of(2), codecRegistry)).addVariable("a", VValue.value(intType, 2, codecRegistry)).build(codecRegistry)).value());
         }
     }
 
@@ -537,12 +537,12 @@ public class CodecTest {
                 "optional", optionalIntType,
                 "mapping_function", intToIntType),
                 optionalIntType),
-                (ctx, sig, a) -> new VValue(sig.outputType(), a.get("optional").get(optionalIntType).stream().map(i -> a.get("mapping_function").<VExpression>getUnchecked().evaluate(ctx.with("unwrapped_optional", new VValue(intType, i))).get(intType)).findFirst()));
+                (ctx, sig, a) -> VValue.value(sig.outputType(), a.get("optional").get(optionalIntType).stream().map(i -> a.get("mapping_function").<VExpression>getUnchecked().evaluate(ctx.with("unwrapped_optional", new VValue(intType, i))).get(intType)).findFirst(), ctx.env()));
         var addFunction = new VFunctionDefinition("add", new VFunctionSignature(Map.of(
                 "a", intType,
                 "b", intType),
                 intType),
-                (ctx, sig, a) -> new VValue(sig.outputType(), a.get("a").get(intType) + a.get("b").get(intType)));
+                (ctx, sig, a) -> VValue.value(sig.outputType(), a.get("a").get(intType) + a.get("b").get(intType), ctx.env()));
         codecRegistry.registerCodecForType(intType, Codec.INT);
         codecRegistry.registerFunction(mapOptionalFunction);
         codecRegistry.registerFunction(addFunction);

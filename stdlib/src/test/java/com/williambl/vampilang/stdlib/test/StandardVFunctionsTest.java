@@ -26,7 +26,7 @@ public class StandardVFunctionsTest {
             var bExpr = VExpression.value(StandardVTypes.STRING, "b");
             var expr = VExpression.functionApplication(StandardVFunctions.IF_ELSE, Map.of("predicate", predicateExpr, "a", aExpr, "b", bExpr)).resolveTypes(ENV, new EvaluationContext.Spec()).result();
             Assertions.assertTrue(expr.isPresent());
-            var res = expr.get().evaluate(new EvaluationContext());
+            var res = expr.get().evaluate(new EvaluationContext(new VEnvironmentImpl()));
             var expected = value ? "a" : "b";
             Assertions.assertEquals(StandardVTypes.STRING, res.type());
             Assertions.assertEquals(expected, res.value());
@@ -49,7 +49,7 @@ public class StandardVFunctionsTest {
         )).resolveTypes(ENV, spec).result();
         Assertions.assertTrue(expr.isPresent());
         for (var value : values) {
-            var res = expr.get().evaluate(EvaluationContext.builder(spec).addVariable("the_input", new VValue(StandardVTypes.NUMBER, value)).build());
+            var res = expr.get().evaluate(EvaluationContext.builder(spec).addVariable("the_input", VValue.value(StandardVTypes.NUMBER, value, ENV)).build(ENV));
             var expected = Double.toString(value);
             Assertions.assertEquals(StandardVTypes.STRING, res.type());
             Assertions.assertEquals(expected, res.value());
@@ -59,7 +59,7 @@ public class StandardVFunctionsTest {
     @Test
     public void equalsTest() {
         @SuppressWarnings("StringOperationCanBeSimplified") Set<Supplier<VValue>> values
-                = Set.of(() -> new VValue(StandardVTypes.NUMBER, 3.32442), () -> new VValue(StandardVTypes.STRING, new String("yay :3")));
+                = Set.of(() -> VValue.value(StandardVTypes.NUMBER, 3.32442, ENV), () -> VValue.value(StandardVTypes.STRING, new String("yay :3"), ENV));
         var inputA = VExpression.variable("the_input_a");
         var inputB = VExpression.variable("the_input_b");
         var equalsExpr = VExpression.functionApplication(StandardVFunctions.EQUALS, Map.of(
@@ -74,8 +74,8 @@ public class StandardVFunctionsTest {
             var a = testCase.get(0).get();
             var b = testCase.get(1).get();
             var spec = new EvaluationContext.Spec(Map.of("the_input_a", a.type(), "the_input_b", b.type()));
-            var equalsRes = equalsExpr.resolveTypes(ENV, spec).map(e -> e.evaluate(EvaluationContext.builder(spec).addVariable("the_input_a", a).addVariable("the_input_b", b).build()));
-            var notEqualsRes = notEqualsExpr.resolveTypes(ENV, spec).map(e -> e.evaluate(EvaluationContext.builder(spec).addVariable("the_input_a", a).addVariable("the_input_b", b).build()));
+            var equalsRes = equalsExpr.resolveTypes(ENV, spec).map(e -> e.evaluate(EvaluationContext.builder(spec).addVariable("the_input_a", a).addVariable("the_input_b", b).build(ENV)));
+            var notEqualsRes = notEqualsExpr.resolveTypes(ENV, spec).map(e -> e.evaluate(EvaluationContext.builder(spec).addVariable("the_input_a", a).addVariable("the_input_b", b).build(ENV)));
             var expected = Objects.equals(a, b);
             Assertions.assertEquals(StandardVTypes.BOOLEAN, equalsRes.result().map(VValue::type).orElse(null));
             Assertions.assertEquals(StandardVTypes.BOOLEAN, notEqualsRes.result().map(VValue::type).orElse(null));
@@ -106,8 +106,8 @@ public class StandardVFunctionsTest {
 
         Assertions.assertTrue(expr.isPresent());
         for (var test : values) {
-            var value = new VValue(optionalNumberType, test);
-            var res = expr.get().evaluate(EvaluationContext.builder(spec).addVariable("input", value).build());
+            var value = VValue.value(optionalNumberType, test, ENV);
+            var res = expr.get().evaluate(EvaluationContext.builder(spec).addVariable("input", value).build(ENV));
             Assertions.assertEquals(optionalBooleanType, res.type());
             Assertions.assertEquals(test.map(d -> d > 1.0), res.value());
         }
@@ -129,8 +129,8 @@ public class StandardVFunctionsTest {
 
         Assertions.assertTrue(expr.isPresent());
         for (var test : values) {
-            var value = new VValue(optionalNumberType, test);
-            var res = expr.get().evaluate(EvaluationContext.builder(spec).addVariable("input", value).build());
+            var value = VValue.value(optionalNumberType, test, ENV);
+            var res = expr.get().evaluate(EvaluationContext.builder(spec).addVariable("input", value).build(ENV));
             Assertions.assertEquals(StandardVTypes.NUMBER, res.type());
             Assertions.assertEquals(test.orElse(100.0), res.value());
         }
