@@ -15,7 +15,7 @@ public final class StandardVTypes {
     public static final TypedVType<Double> NUMBER = VType.create(TypeToken.of(Double.class));
     public static final TypedVType<String> STRING = VType.create(TypeToken.of(String.class));
     public static final TypedVType<Boolean> BOOLEAN = VType.create(TypeToken.of(Boolean.class));
-    public static final VFixedTemplateType TEMPLATE_ANY = VType.createTemplate();
+    public static final VTopTemplateType TEMPLATE_ANY = VType.createTopTemplate();
     private static final SimpleVType RAW_LIST = VType.create();
     public static final VParameterisedType LIST = VType.createParameterised(RAW_LIST, TEMPLATE_ANY);
     private static final SimpleVType RAW_MATCH_CASE = VType.create();

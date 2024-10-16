@@ -6,10 +6,7 @@ import com.mojang.serialization.DataResult;
 import com.mojang.serialization.codecs.KeyDispatchCodec;
 import com.williambl.vampilang.codec.*;
 import com.williambl.vampilang.lang.function.VFunctionDefinition;
-import com.williambl.vampilang.lang.type.SimpleVType;
-import com.williambl.vampilang.lang.type.VParameterisedType;
-import com.williambl.vampilang.lang.type.VFixedTemplateType;
-import com.williambl.vampilang.lang.type.VType;
+import com.williambl.vampilang.lang.type.*;
 
 import java.util.*;
 import java.util.function.Function;
@@ -44,12 +41,10 @@ public class VEnvironmentImpl implements VEnvironment {
 
     public Set<VType> allTypesMatching(VType type) {
         Set<VType> set = new HashSet<>();
-        if (type instanceof VFixedTemplateType template) {
-            if (template.bounds == null) {
-                set.addAll(this.codecs.keySet());
-            } else {
-                set.addAll(template.bounds.stream().map(this::allTypesMatching).flatMap(Set::stream).toList());
-            }
+        if (type instanceof VTopTemplateType) {
+            set.addAll(this.codecs.keySet());
+        } else if (type instanceof VFixedTemplateType template) {
+            set.addAll(template.bounds.stream().map(this::allTypesMatching).flatMap(Set::stream).toList());
         } else if (type instanceof VParameterisedType paramed) {
             List<Set<VType>> typesMatchingEachParam = new ArrayList<>();
             for (int i = 0; i < paramed.parameters.size(); i++) {
@@ -135,7 +130,7 @@ public class VEnvironmentImpl implements VEnvironment {
     @Override
     public VParameterisedType listType() {
         var type = this.getType("list");
-        return type == null ? null : VType.createParameterised(type, VType.createTemplate());
+        return type == null ? null : VType.createParameterised(type, VType.createTopTemplate());
     }
 
     @Override

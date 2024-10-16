@@ -169,7 +169,7 @@ public sealed interface VExpression {
 
         @Override
         public VType type() {
-            return this.resolvedType == null ? VType.createTemplate() : this.resolvedType;
+            return this.resolvedType == null ? VType.createTopTemplate() : this.resolvedType;
         }
 
         @Override

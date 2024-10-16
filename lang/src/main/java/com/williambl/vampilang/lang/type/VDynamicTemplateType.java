@@ -10,7 +10,7 @@ import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-public sealed class VDynamicTemplateType implements VTemplateType permits VFixedTemplateType {
+public sealed class VDynamicTemplateType implements VTemplateType permits VFixedTemplateType, VTopTemplateType {
     public final @NotNull Predicate<VType> predicate;
 
     VDynamicTemplateType(@NotNull Predicate<VType> predicate) {

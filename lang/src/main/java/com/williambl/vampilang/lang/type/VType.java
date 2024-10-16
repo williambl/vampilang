@@ -41,8 +41,8 @@ public sealed interface VType permits SimpleVType, VParameterisedType, VTemplate
         return new SimpleVType(predicate);
     }
 
-    static VFixedTemplateType createTemplate() {
-        return new VFixedTemplateType(Set.of());
+    static VTopTemplateType createTopTemplate() {
+        return new VTopTemplateType();
     }
 
     static VFixedTemplateType createTemplate(VType... bounds) {

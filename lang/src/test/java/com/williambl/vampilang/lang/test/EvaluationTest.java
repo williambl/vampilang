@@ -1,8 +1,6 @@
 package com.williambl.vampilang.lang.test;
 
 import com.google.common.reflect.TypeToken;
-import com.mojang.serialization.Codec;
-import com.mojang.serialization.codecs.RecordCodecBuilder;
 import com.williambl.vampilang.lang.*;
 import com.williambl.vampilang.lang.function.VFunctionDefinition;
 import com.williambl.vampilang.lang.function.VFunctionSignature;
@@ -21,7 +19,7 @@ public class EvaluationTest {
         var doubleType = VType.create();
         var numType = VType.createTemplate(intType, doubleType);
         var boolType = VType.create();
-        var anyType = VType.createTemplate();
+        var anyType = VType.createTopTemplate();
         var addFunction = new VFunctionDefinition("add", new VFunctionSignature(Map.of("a", numType, "b", numType), numType), (ctx, sig, a) -> VValue.value(sig.outputType(), ((Number) a.get("a").value()).doubleValue() + ((Number) a.get("b").value()).doubleValue(), ctx.env()));
         var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> VValue.value(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value(), ctx.env()));
         var env = new VEnvironmentImpl();
@@ -51,7 +49,7 @@ public class EvaluationTest {
         var doubleType = VType.create();
         var numType = VType.createTemplate(intType, doubleType);
         var boolType = VType.create();
-        var anyType = VType.createTemplate();
+        var anyType = VType.createTopTemplate();
         var addFunction = new VFunctionDefinition("add", new VFunctionSignature(Map.of("a", numType, "b", numType), numType), (ctx, sig, a) -> VValue.value(sig.outputType(), ((Number) a.get("a").value()).doubleValue() + ((Number) a.get("b").value()).doubleValue(), ctx.env()));
         var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> VValue.value(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value(), ctx.env()));
         var env = new VEnvironmentImpl();
@@ -84,7 +82,7 @@ public class EvaluationTest {
         var doubleType = VType.create();
         var numType = VType.createTemplate(intType, doubleType);
         var boolType = VType.create();
-        var anyType = VType.createTemplate();
+        var anyType = VType.createTopTemplate();
         var addFunction = new VFunctionDefinition("add", new VFunctionSignature(Map.of("a", numType, "b", numType), numType), (ctx, sig, a) -> VValue.value(sig.outputType(), ((Number) a.get("a").value()).doubleValue() + ((Number) a.get("b").value()).doubleValue(), ctx.env()));
         var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> VValue.value(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value(), ctx.env()));
         var env = new VEnvironmentImpl();
@@ -106,7 +104,7 @@ public class EvaluationTest {
                 "b", VExpression.value(intType, 25)));
         var resolved = program.resolveTypes(env, new EvaluationContext.Spec()).result();
         Assertions.assertTrue(resolved.isPresent());
-        Assertions.assertEquals("(function if-else a = (function add a = (value 5 : int) b = (value 10 : int) : a : type1[double|int], b : type1[double|int] -> type1[double|int]) b = (value 25 : int) predicate = (function if-else a = (value true : bool) b = (value false : bool) predicate = (value true : bool) : a : type2, b : type2, predicate : bool -> type2) : a : type3, b : type3, predicate : bool -> type3)", program.toString(env.createTypeNamer()));
+        Assertions.assertEquals("(function if-else a = (function add a = (value 5 : int) b = (value 10 : int) : a : type1[double|int], b : type1[double|int] -> type1[double|int]) b = (value 25 : int) predicate = (function if-else a = (value true : bool) b = (value false : bool) predicate = (value true : bool) : a : type2[all], b : type2[all], predicate : bool -> type2[all]) : a : type3[all], b : type3[all], predicate : bool -> type3[all])", program.toString(env.createTypeNamer()));
         Assertions.assertEquals("(function if-else a = (function add a = (value 5 : int) b = (value 10 : int) : a : int, b : int -> int) b = (value 25 : int) predicate = (function if-else a = (value true : bool) b = (value false : bool) predicate = (value true : bool) : a : bool, b : bool, predicate : bool -> bool) : a : int, b : int, predicate : bool -> int)", resolved.get().toString(env.createTypeNamer()));
     }
 
@@ -116,7 +114,7 @@ public class EvaluationTest {
         var doubleType = VType.create();
         var numType = VType.createTemplate(intType, doubleType);
         var boolType = VType.create();
-        var anyType = VType.createTemplate();
+        var anyType = VType.createTopTemplate();
         var addFunction = new VFunctionDefinition("add", new VFunctionSignature(Map.of("a", numType, "b", numType), numType), (ctx, sig, a) -> VValue.value(sig.outputType(), ((Number) a.get("a").value()).doubleValue() + ((Number) a.get("b").value()).doubleValue(), ctx.env()));
         var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> VValue.value(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value(), ctx.env()));
         var evaluationSpec = new EvaluationContext.Spec(Map.of("var1", intType, "var2", intType));
@@ -170,7 +168,7 @@ public class EvaluationTest {
         var numType = VType.createTemplate(intType, doubleType);
         var boolType = VType.create();
         var mySpecialType = VType.create(TypeToken.of(MySpecialObject.class), Map.of("a", intType, "b", intType), map -> new MySpecialObject(map.get("a").<Number>getUnchecked().intValue(), map.get("b").<Number>getUnchecked().intValue()));
-        var anyType = VType.createTemplate();
+        var anyType = VType.createTopTemplate();
         var addFunction = new VFunctionDefinition("add", new VFunctionSignature(Map.of("a", numType, "b", numType), numType), (ctx, sig, a) -> VValue.value(sig.outputType(), ((Number) a.get("a").value()).doubleValue() + ((Number) a.get("b").value()).doubleValue(), ctx.env()));
         var ifElseFunction = new VFunctionDefinition("if-else", new VFunctionSignature(Map.of("predicate", boolType, "a", anyType, "b", anyType), anyType), (ctx, sig, a) -> VValue.value(sig.outputType(), (boolean) a.get("predicate").value() ? a.get("a").value() : a.get("b").value(), ctx.env()));
         var evaluationSpec = new EvaluationContext.Spec(Map.of("var1", intType, "var2", intType));
@@ -210,7 +208,7 @@ public class EvaluationTest {
         var doubleType = VType.create();
         var numType = VType.createTemplate(intType, doubleType);
         var boolType = VType.create();
-        var anyType = VType.createTemplate();
+        var anyType = VType.createTopTemplate();
         var bareListType = VType.create();
         var evaluationSpec = new EvaluationContext.Spec(Map.of("var1", intType));
         var env = new VEnvironmentImpl();

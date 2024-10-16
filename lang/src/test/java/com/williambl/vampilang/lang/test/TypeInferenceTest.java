@@ -13,7 +13,7 @@ import java.util.Map;
 public class TypeInferenceTest {
     @Test
     public void correctlyInfersSingleTypeVariable() {
-        var templateType = VType.createTemplate();
+        var templateType = VType.createTopTemplate();
         var identityFunctionSignature = new VFunctionSignature(Map.of("x", templateType), templateType);
         var concreteType = VType.create();
         var resolvedFunctionSignature = identityFunctionSignature.resolveTypes(new VEnvironmentImpl(), Map.of("x", concreteType)).result();
@@ -26,12 +26,16 @@ public class TypeInferenceTest {
 
     @Test
     public void correctlyInfersTypeVariableWithTwoMatchingInputTypes() {
-        var templateType = VType.createTemplate();
+        var templateType = VType.createTopTemplate();
         var functionSignature = new VFunctionSignature(Map.of("a", templateType, "b", templateType), templateType);
         var concreteTypeA = VType.create();
         var concreteTypeB = VType.create();
         var aOrBType = VType.createTemplate(concreteTypeA, concreteTypeB);
-        var resolvedFunctionSignature = functionSignature.resolveTypes(new VEnvironmentImpl(), Map.of("a", concreteTypeA, "b", aOrBType)).result();
+        var env = new VEnvironmentImpl();
+        env.registerType("a", concreteTypeA);
+        env.registerType("b", concreteTypeB);
+        env.registerType("aOrB", aOrBType);
+        var resolvedFunctionSignature = functionSignature.resolveTypes(env, Map.of("a", concreteTypeA, "b", aOrBType)).result();
         Assertions.assertTrue(resolvedFunctionSignature.isPresent());
         Assertions.assertEquals(aOrBType, resolvedFunctionSignature.get().inputTypes().get("a"));
         Assertions.assertEquals(aOrBType, resolvedFunctionSignature.get().inputTypes().get("b"));
@@ -40,7 +44,7 @@ public class TypeInferenceTest {
 
     @Test
     public void failsToInferNonMatchingInputTypes() {
-        var templateType = VType.createTemplate();
+        var templateType = VType.createTopTemplate();
         var functionSignature = new VFunctionSignature(Map.of("a", templateType, "b", templateType), templateType);
         var concreteTypeA = VType.create();
         var concreteTypeB = VType.create();
@@ -52,7 +56,7 @@ public class TypeInferenceTest {
         var ctx = new TypeNamer();
         var bareListType = VType.create();     // List
         ctx.addName(bareListType, "List");
-        var templateType = VType.createTemplate(); // Any
+        var templateType = VType.createTopTemplate(); // Any
         ctx.addName(templateType, "Any");
         var listType = VType.createParameterised(bareListType, templateType); // List<? extends Any>
         var functionSignature = new VFunctionSignature(Map.of("a", listType), templateType); // <T extends Any> (List<T>) -> T
