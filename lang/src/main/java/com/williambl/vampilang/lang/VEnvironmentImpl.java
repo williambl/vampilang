@@ -13,12 +13,12 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 public class VEnvironmentImpl implements VEnvironment {
-    private final Map<String, VType> types = new HashMap<>();
-    private final Map<VType, Codec<?>> codecs = new HashMap<>();
-    private final Map<VType, Function<VParameterisedType, Codec<?>>> parameterisedTypeCodecs = new HashMap<>();
-    private final Map<String, VFunctionDefinition> functions = new HashMap<>();
-    private final Map<TypeAndSpecCacheKey, Codec<VExpression>> cachedVExpressionCodecs = new HashMap<>();
-    private final Map<TypeAndSpecCacheKey, Codec<List<VExpression>>> cachedVExpressionMultiCodecs = new HashMap<>();
+    protected final Map<String, VType> types = new HashMap<>();
+    protected final Map<VType, Codec<?>> codecs = new HashMap<>();
+    protected final Map<VType, Function<VParameterisedType, Codec<?>>> parameterisedTypeCodecs = new HashMap<>();
+    protected final Map<String, VFunctionDefinition> functions = new HashMap<>();
+    protected final Map<TypeAndSpecCacheKey, Codec<VExpression>> cachedVExpressionCodecs = new HashMap<>();
+    protected final Map<TypeAndSpecCacheKey, Codec<List<VExpression>>> cachedVExpressionMultiCodecs = new HashMap<>();
 
     @Override
     public Codec<?> rawCodecForType(VType type) {
@@ -162,6 +162,6 @@ public class VEnvironmentImpl implements VEnvironment {
         return new TypeNamer(reversedMap);
     }
 
-    private record TypeAndSpecCacheKey(VType type, EvaluationContext.Spec spec) {
+    protected record TypeAndSpecCacheKey(VType type, EvaluationContext.Spec spec) {
     }
 }
