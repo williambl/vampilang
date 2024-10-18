@@ -43,9 +43,15 @@ public class VEnvironmentImpl implements VEnvironment {
     public Set<VType> allTypesMatching(VType type) {
         Set<VType> set = new HashSet<>();
         if (type instanceof VTopTemplateType) {
-            set.addAll(this.codecs.keySet());
+            set.addAll(this.allTypes().values());
         } else if (type instanceof VFixedTemplateType template) {
             set.addAll(template.bounds.stream().map(this::allTypesMatching).flatMap(Set::stream).toList());
+        } else if (type instanceof VDynamicTemplateType template) {
+            set.addAll(template.bounds(this)
+                    .filter(b -> !(b.contains(type, this))) // stop infinite loops
+                    .map(this::allTypesMatching)
+                    .flatMap(Set::stream)
+                    .toList());
         } else if (type instanceof VParameterisedType paramed) {
             List<Set<VType>> typesMatchingEachParam = new ArrayList<>();
             for (int i = 0; i < paramed.parameters.size(); i++) {
