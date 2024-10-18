@@ -53,7 +53,7 @@ public class ObjectConstructionDecoder implements Decoder<List<VExpression.Objec
                 return DataResult.error(() -> "Error decoding property %s: %s".formatted(property.getKey(), error.get().message()));
             }
 
-            properties.computeIfAbsent(property.getKey(), $ -> new ArrayList<>()).add(decodedInput.getOrThrow(false, $ -> {}).getFirst());
+            properties.computeIfAbsent(property.getKey(), $ -> new ArrayList<>()).add(decodedInput.getOrThrow(IllegalStateException::new).getFirst());
         }
 
         var res = Sets.cartesianProduct(

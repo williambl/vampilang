@@ -41,7 +41,7 @@ public class FunctionApplicationDecoder implements Decoder<List<VExpression.Func
                 return DataResult.error(() -> "Error decoding argument %s: %s".formatted(functionInput.getKey(), error.get().message()));
             }
 
-            functionInputs.computeIfAbsent(functionInput.getKey(), $ -> new ArrayList<>()).addAll(decodedInput.getOrThrow(false, $ -> {}).getFirst());
+            functionInputs.computeIfAbsent(functionInput.getKey(), $ -> new ArrayList<>()).addAll(decodedInput.getOrThrow(IllegalStateException::new).getFirst());
         }
 
         var res = Sets.cartesianProduct(

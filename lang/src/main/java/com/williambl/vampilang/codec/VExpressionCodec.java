@@ -59,12 +59,12 @@ public class VExpressionCodec implements Codec<List<VExpression>> {
 
         if (results.isEmpty()) {
             return DataResult.error(() -> "Not a valid variable ref, value, list, object, lambda, or function application. Error from each:\nvariable ref: %s,\nvalue: %s,\nlist: %s,\nobject: %s,\nlambda: %s,\nfunction application: %s".formatted(
-                    variableRefRead.error().map(DataResult.PartialResult::message).orElse("?"),
-                    valueRead.error().map(DataResult.PartialResult::message).orElse("?"),
-                    listRead.error().map(DataResult.PartialResult::message).orElse("?"),
-                    objectRead.error().map(DataResult.PartialResult::message).orElse("?"),
-                    lambdaRead.error().map(DataResult.PartialResult::message).orElse("?"),
-                    functionApplicationRead.error().map(DataResult.PartialResult::message).orElse("?")));
+                    variableRefRead.error().map(DataResult.Error::message).orElse("?"),
+                    valueRead.error().map(DataResult.Error::message).orElse("?"),
+                    listRead.error().map(DataResult.Error::message).orElse("?"),
+                    objectRead.error().map(DataResult.Error::message).orElse("?"),
+                    lambdaRead.error().map(DataResult.Error::message).orElse("?"),
+                    functionApplicationRead.error().map(DataResult.Error::message).orElse("?")));
         }
 
         return DataResult.success(Pair.of(results, input));

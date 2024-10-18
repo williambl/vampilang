@@ -377,7 +377,7 @@ public sealed interface VExpression {
             if (res.result().isPresent()) {
                 streamContents.add(res.result().get());
             } else {
-                errors.add(res.error().map(DataResult.PartialResult::message).orElse("?"));
+                errors.add(res.error().map(DataResult.Error::message).orElse("?"));
             }
         });
         return errors.isEmpty() ? DataResult.success(streamContents.stream()) : DataResult.error(() -> String.join("\n and ", errors));

@@ -487,7 +487,7 @@ public class CodecTest {
         }
         {
             var codec = codecRegistry.expressionCodecForType(boolType, new EvaluationContext.Spec());
-            var res = codec.decode(JsonOps.INSTANCE, JsonParser.parseString("{\"function\": \"if-else\", \"predicate\": true, \"a\": 3, \"b\": 5}"));
+            var res = codec.decode(JsonOps.INSTANCE, JsonParser.parseString("{\"function\": \"if-else\", \"predicate\": true, \"a\": true, \"b\": false}"));
             CodecTest.assertResultExists(res);
             var resExpr = res.result().get().getFirst();
             var resolvedExpr = resExpr.resolveTypes(codecRegistry, new EvaluationContext.Spec());

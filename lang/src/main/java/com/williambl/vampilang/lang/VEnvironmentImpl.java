@@ -3,6 +3,7 @@ package com.williambl.vampilang.lang;
 import com.google.common.collect.Sets;
 import com.mojang.serialization.Codec;
 import com.mojang.serialization.DataResult;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.codecs.KeyDispatchCodec;
 import com.williambl.vampilang.codec.*;
 import com.williambl.vampilang.lang.function.VFunctionDefinition;
@@ -79,13 +80,14 @@ public class VEnvironmentImpl implements VEnvironment {
     public Codec<List<VExpression>> expressionMultiCodecForType(VType type, EvaluationContext.Spec spec) {
         return this.cachedVExpressionMultiCodecs.computeIfAbsent(new TypeAndSpecCacheKey(type, spec), $ -> new VExpressionCodec(
                 ValueDecoder.createCodec(this, spec, type),
-                KeyDispatchCodec.<VFunctionDefinition, List<VExpression.FunctionApplication>>unsafe("function", Codec.STRING.comapFlatMap(
-                                        name -> Optional.ofNullable(this.functions.get(name)).map(DataResult::success).orElse(DataResult.error(() -> "No such function with name "+name)),
-                                        VFunctionDefinition::name),
-                                exprs -> exprs.stream().map(expr -> DataResult.success(expr.function())).findFirst().orElse(DataResult.error(() -> "No entry in list!")),
-                                func -> DataResult.success(FunctionApplicationDecoder.createCodec(func, this, spec)),
-                                funcs -> funcs.stream().map(func -> DataResult.success(FunctionApplicationDecoder.createCodec(func.function(), this, spec))).findFirst().orElse(DataResult.error(() -> "No entry in list!"))).codec()
-                        .comapFlatMap(fs -> Optional.of(fs.stream()
+                new KeyDispatchCodec<VFunctionDefinition, List<VExpression.FunctionApplication>>(
+                        "function",
+                        Codec.STRING.comapFlatMap(
+                                name -> Optional.ofNullable(this.functions.get(name)).map(DataResult::success).orElse(DataResult.error(() -> "No such function with name "+name)),
+                                VFunctionDefinition::name),
+                        exprs -> exprs.stream().map(expr -> DataResult.success(expr.function())).findFirst().orElse(DataResult.error(() -> "No entry in list!")),
+                        func -> DataResult.success(MapCodec.assumeMapUnsafe(FunctionApplicationDecoder.createCodec(func, this, spec)))
+                ).codec().comapFlatMap(fs -> Optional.of(fs.stream()
                                                 .map(f -> f.resolveTypes(this, spec)
                                                         .flatMap(fr -> type.contains(((VExpression.FunctionApplication)fr).resolvedSignature().outputType(), this)
                                                                 ? DataResult.success((VExpression.FunctionApplication) fr)
@@ -100,18 +102,18 @@ public class VEnvironmentImpl implements VEnvironment {
                                 Function.identity()),
                 VariableRefCodec.CODEC,
                 ObjectConstructionDecoder.createCodec(this, spec).comapFlatMap(os ->
-                        Optional.of(os.stream()
-                                .map(o -> o.resolveTypes(this, spec)
-                                        .flatMap(or -> type.contains(or.type(), this)
-                                                ? DataResult.success((VExpression.ObjectConstruction) or)
-                                                : DataResult.error(() -> "Unmatched type")))
-                                        .map(DataResult::result)
-                                        .filter(Optional::isPresent)
-                                        .map(Optional::get)
-                                        .toList())
-                                .filter(l -> !l.isEmpty())
-                                .map(DataResult::success)
-                                .orElse(DataResult.error(() -> "Unmatched type!")),
+                                Optional.of(os.stream()
+                                                .map(o -> o.resolveTypes(this, spec)
+                                                        .flatMap(or -> type.contains(or.type(), this)
+                                                                ? DataResult.success((VExpression.ObjectConstruction) or)
+                                                                : DataResult.error(() -> "Unmatched type")))
+                                                .map(DataResult::result)
+                                                .filter(Optional::isPresent)
+                                                .map(Optional::get)
+                                                .toList())
+                                        .filter(l -> !l.isEmpty())
+                                        .map(DataResult::success)
+                                        .orElse(DataResult.error(() -> "Unmatched type!")),
                         Function.identity()),
                 ListConstructionDecoder.createCodec(this, spec, type),
                 LambdaDecoder.createCodec(this, spec, type)));
